@@ -11,7 +11,7 @@ store.init('session', {
   streamAbortController: null,
   pendingBranchFromNodeId: null,
   apiKey: localStorage.getItem('grok_api_key') ?? '',
-  model: localStorage.getItem('grok_model') ?? 'grok-3',
+  model: localStorage.getItem('grok_model') ?? 'grok-4',
   storyId: null,              // IndexedDB record id for current story
   initialized: false          // true after new-story wizard completes
 });

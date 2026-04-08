@@ -204,7 +204,7 @@ async function _stream({ systemPrompt, messages, userInput, mode, actorName, ses
   try {
     const gen = streamGrok({
       apiKey: session.apiKey,
-      model: session.model ?? 'grok-3',
+      model: session.model ?? 'grok-4',
       systemPrompt,
       messages,
       maxTokens: 1024,

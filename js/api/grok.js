@@ -21,7 +21,7 @@ const GROK_ENDPOINT = 'https://api.x.ai/v1/chat/completions';
  */
 export async function* streamGrok({ apiKey, model, systemPrompt, messages, maxTokens = 2048, signal }) {
   const body = {
-    model: model ?? 'grok-3',
+    model: model ?? 'grok-4',
     max_tokens: maxTokens,
     stream: true,
     messages: [
@@ -92,7 +92,7 @@ export async function callGrok({ apiKey, model, systemPrompt, messages, maxToken
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: model ?? 'grok-3',
+      model: model ?? 'grok-4',
       max_tokens: maxTokens,
       stream: false,
       messages: [

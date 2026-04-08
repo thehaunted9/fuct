@@ -8,7 +8,8 @@ import { callGrok } from '../api/grok.js';
 import bus from '../utils/events.js';
 
 const MODELS = [
-  { value: 'grok-3',      label: 'Grok 3 (Recommended)' },
+  { value: 'grok-4',      label: 'Grok 4 (Latest)' },
+  { value: 'grok-3',      label: 'Grok 3' },
   { value: 'grok-3-mini', label: 'Grok 3 Mini (Faster, cheaper)' },
   { value: 'grok-2',      label: 'Grok 2' },
 ];
