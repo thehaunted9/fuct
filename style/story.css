@@ -1,0 +1,261 @@
+/* ── Welcome Screen ─────────────────────────────────────────────────────────── */
+#welcome-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6);
+  text-align: center;
+}
+
+/* ── Story Panel ─────────────────────────────────────────────────────────────── */
+#story-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-6) clamp(var(--sp-4), 6%, 80px);
+  scroll-behavior: smooth;
+}
+
+/* ── Story Text Typography ───────────────────────────────────────────────────── */
+#story-content {
+  max-width: 720px;
+  margin: 0 auto;
+  font-family: var(--font-story);
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: var(--text-primary);
+}
+
+/* Markdown rendered elements */
+#story-content p { margin-bottom: 1.2em; }
+
+#story-content h1,
+#story-content h2,
+#story-content h3 {
+  font-family: var(--font-ui);
+  color: var(--accent);
+  margin: 1.5em 0 0.5em;
+  font-weight: 600;
+}
+#story-content h1 { font-size: 1.3rem; }
+#story-content h2 { font-size: 1.1rem; }
+#story-content h3 { font-size: 0.95rem; }
+
+#story-content em { color: var(--text-secondary); font-style: italic; }
+#story-content strong { color: var(--text-primary); font-weight: 700; }
+
+#story-content blockquote {
+  border-left: 3px solid var(--accent-dim);
+  padding-left: var(--sp-4);
+  margin: 1em 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+#story-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+
+#story-content ul, #story-content ol {
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+}
+#story-content li { margin-bottom: 0.3em; }
+
+/* ── Story segments (each node adds a segment) ───────────────────────────────── */
+.story-segment {
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid transparent;
+  position: relative;
+}
+
+.story-segment + .story-segment {
+  padding-top: var(--sp-3);
+}
+
+/* User input echo (shown above each AI response) */
+.user-action-echo {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-surface);
+  border-radius: var(--border-radius-sm);
+  border-left: 3px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+.user-action-echo .actor-label {
+  color: var(--mode-char);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.user-action-echo.narrator-echo .actor-label { color: var(--mode-narr); }
+
+/* ── Streaming cursor ────────────────────────────────────────────────────────── */
+#stream-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--accent);
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: blink 1.1s step-start infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── Streaming container ─────────────────────────────────────────────────────── */
+#streaming-segment {
+  padding: var(--sp-4) 0;
+}
+
+/* ── Media strip ─────────────────────────────────────────────────────────────── */
+#media-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  min-height: 70px;
+}
+#media-strip.empty { display: none; }
+
+#scene-image {
+  width: 100px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#scene-image.hidden { display: none; }
+
+#audio-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+}
+#audio-track-name {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#audio-volume {
+  width: 80px;
+  accent-color: var(--accent);
+}
+
+/* ── Input Panel ─────────────────────────────────────────────────────────────── */
+#input-panel {
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+#input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-3);
+}
+
+#story-input {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: var(--sp-3);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  resize: none;
+  min-height: 44px;
+  max-height: 160px;
+  line-height: 1.5;
+  overflow-y: auto;
+  transition: border-color 0.15s;
+}
+#story-input:focus { border-color: var(--border-focus); }
+#story-input::placeholder { color: var(--text-muted); }
+
+#send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--border-radius);
+  background: var(--accent);
+  border: none;
+  color: #0e0e12;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, opacity 0.15s;
+}
+#send-btn:hover:not(:disabled) { background: #ffa85a; }
+#send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Stop streaming button (replaces send during stream) */
+#stop-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--border-radius);
+  background: var(--danger);
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+#stop-btn.visible { display: flex; }
+
+/* Action buttons row */
+#action-row {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.action-btn {
+  padding: 3px var(--sp-3);
+  font-size: 0.75rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.action-btn:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.action-btn.accent {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+.action-btn.accent:hover { background: var(--accent-glow); }

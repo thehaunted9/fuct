@@ -1,134 +1,378 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Refined Prompt Generator</title>
-  <style>
-    body { background: #121212; color: #eee; font-family: 'Segoe UI', sans-serif; padding: 2rem; }
-    h1 { color: #f2994a; }
-    .section { margin-bottom: 1.5rem; border: 1px solid #444; border-radius: 6px; }
-    .section summary { cursor: pointer; background: #1e1e1e; padding: 1rem; font-size: 1.1rem; font-weight: bold; }
-    .section-content { background: #222; padding: 1rem; }
-    label { display: block; margin-top: 0.75rem; }
-    select, input[type=range], textarea, button {
-      width: 100%; padding: 0.5rem; background: #1e1e1e;
-      border: 1px solid #555; color: white; margin-top: 0.25rem;
-    }
-    textarea { height: 180px; }
-    .button-group { display: flex; gap: 1rem; margin-top: 1rem; }
-    .button-group button { flex: 1; }
-    .preview-output { margin-top: 1.5rem; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Story Builder</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style/main.css">
+  <link rel="stylesheet" href="style/panels.css">
+  <link rel="stylesheet" href="style/story.css">
+  <link rel="stylesheet" href="style/timeline.css">
+  <link rel="stylesheet" href="style/modals.css">
+
+  <!-- Vendored marked.js (markdown renderer) -->
+  <script src="lib/marked.min.js"></script>
 </head>
 <body>
-  <h1>Ultimate Prompt Generator</h1>
 
-  <label>
-    <input type="checkbox" id="nsfwToggle" onchange="updatePrompt()"> NSFW Mode
-  </label>
+<div id="app">
 
-  <label>
-    Prompt Length:
-    <input type="range" id="lengthSlider" min="1" max="3" value="2" oninput="updatePrompt()">
-  </label>
+  <!-- ── Top Navigation ───────────────────────────────────────────────────── -->
+  <nav id="top-nav">
+    <button class="sidebar-toggle" id="toggle-left" title="Toggle story navigator">☰</button>
 
-  <label>
-    Platform Output Format:
-    <select id="platformFormat" onchange="updatePrompt()">
-      <option>Universal</option>
-      <option>Stable Diffusion</option>
-      <option>Dreamerland</option>
-      <option>Perchance</option>
-      <option>Sora</option>
-      <option>Photify AI</option>
-      <option>Flux</option>
-    </select>
-  </label>
+    <span id="story-title" title="Click to rename">Story Builder</span>
+    <span id="nav-breadcrumb"></span>
 
-  <details class="section" open>
-    <summary>Physical Traits</summary>
-    <div class="section-content">
-      <label>Hair Color:<select id="hairColor"><option>Blonde</option><option>Red</option><option>Black</option></select></label>
-      <label>Hair Style:<select id="hairStyle"><option>Long and Wavy</option><option>Pixie Cut</option><option>Sleek Straight</option></select></label>
-      <label>Skin Tone:<select id="skinTone"><option>Fair</option><option>Olive</option><option>Tan</option></select></label>
-      <label>Body Type:<select id="bodyType"><option>Petite and Slender</option><option>Petite with Curves</option></select></label>
+    <!-- Mode switcher -->
+    <div id="mode-switcher">
+      <button class="mode-btn active-char" data-mode="character" title="Play as a character">Character</button>
+      <button class="mode-btn" data-mode="narrator" title="Narrate the story">Narrator</button>
+      <button class="mode-btn" data-mode="worldbuilder" title="Build the world">World</button>
     </div>
-  </details>
 
-  <details class="section">
-    <summary>Identity & Style</summary>
-    <div class="section-content">
-      <label>Celebrity Likeness:<select id="celebrity"><option>Emma Stone</option><option>Zendaya</option><option>Scarlett Johansson</option></select></label>
-      <label>Age Range:<select id="ageRange"><option>18–20</option><option>21–25</option><option>26–29</option></select></label>
+    <div id="nav-actions">
+      <span id="mode-badge" class="mode-badge character">Character</span>
+      <button class="btn btn-ghost" id="new-story-btn" title="Start a new story">+ New Story</button>
+      <button class="btn-icon" id="settings-btn" title="Settings">⚙</button>
     </div>
-  </details>
 
-  <details class="section">
-    <summary>Wardrobe</summary>
-    <div class="section-content">
-      <label>Lingerie Style:<select id="lingerie"><option>Lace</option><option>Satin</option><option>Mesh</option></select></label>
-      <label>High Heels:<select id="heels"><option>Stilettos</option><option>Pumps</option><option>Strappy Heels</option></select></label>
-      <label>Accessories:<select id="accessories"><option>Choker</option><option>Gloves</option><option>Necklace</option></select></label>
-    </div>
-  </details>
+    <button class="sidebar-toggle" id="toggle-right" title="Toggle character & world panel">☰</button>
+  </nav>
 
-  <details class="section">
-    <summary>Art Direction</summary>
-    <div class="section-content">
-      <label>Pose:<select id="pose"><option>Standing with Hip Out</option><option>Leaning Forward</option><option>Lying on Side</option></select></label>
-      <label>Camera Angle:<select id="angle"><option>POV</option><option>Worm's Eye</option><option>Eye-Level</option></select></label>
-      <label>Composition:<select id="composition"><option>Full Body</option><option>Waist-Up</option><option>Close-Up</option></select></label>
-      <label>Lighting:<select id="lighting"><option>Soft Glow</option><option>Harsh Spotlight</option><option>Backlit</option></select></label>
-      <label>Facial Expression:<select id="expression"><option>Playful Smile</option><option>Sultry Gaze</option><option>Innocent Look</option></select></label>
-      <label>Mood:<select id="mood"><option>Playful</option><option>Mysterious</option><option>Dominant</option></select></label>
-    </div>
-  </details>
+  <!-- ── Main Body (3-panel) ──────────────────────────────────────────────── -->
+  <div id="main-body">
 
-  <details class="section">
-    <summary>Scene & Theme</summary>
-    <div class="section-content">
-      <label>Theme:<select id="theme"><option>Gothic</option><option>Romantic</option><option>Cyberpunk</option></select></label>
-      <label>Setting:<select id="setting"><option>Rainy Alley</option><option>Bedroom</option><option>Studio</option></select></label>
-      <label>Environment:<select id="environment"><option>Foggy</option><option>Neon-Lit</option><option>Candlelight</option></select></label>
-    </div>
-  </details>
+    <!-- ── Left Sidebar ───────────────────────────────────────────────────── -->
+    <aside id="sidebar-left">
+      <!-- Arc tabs -->
+      <div id="arc-tabs"></div>
 
-  <div class="button-group">
-    <button onclick="copyPrompt()">📋 Copy</button>
-    <button onclick="downloadPrompt()">💾 Download</button>
-    <button onclick="randomizeAll()">🎲 Randomize</button>
+      <!-- Branch tree -->
+      <div class="sidebar-section-title" style="padding:var(--sp-3) var(--sp-4) var(--sp-1)">
+        Story Path
+        <button class="btn-icon" id="open-timeline-btn" title="Open timeline view" style="font-size:0.8rem">⎇</button>
+      </div>
+      <div id="branch-tree"></div>
+
+      <!-- Locations -->
+      <div class="sidebar-section-title" style="padding:var(--sp-3) var(--sp-4) var(--sp-1);border-top:1px solid var(--border);margin-top:auto">
+        Locations
+      </div>
+      <div id="location-list"></div>
+    </aside>
+
+    <!-- ── Story Panel (center) ───────────────────────────────────────────── -->
+    <div id="story-wrapper">
+
+      <!-- Welcome screen (shown when no story is loaded) -->
+      <div id="welcome-screen" class="hidden">
+        <div style="font-size:3rem;margin-bottom:var(--sp-4)">📖</div>
+        <h1 style="color:var(--accent);margin-bottom:var(--sp-3)">Story Builder</h1>
+        <p style="color:var(--text-secondary);max-width:380px;margin-bottom:var(--sp-5)">
+          An AI-powered interactive storytelling canvas. Build worlds, play characters,
+          branch your narrative, and watch your story come alive in real-time.
+        </p>
+        <div style="display:flex;gap:var(--sp-3)">
+          <button class="btn btn-primary" id="welcome-new-btn">+ Start New Story</button>
+          <button class="btn btn-ghost" id="welcome-settings-btn">⚙ Configure API Key</button>
+        </div>
+      </div>
+
+      <!-- Story display -->
+      <div id="story-panel">
+        <div id="story-content"></div>
+        <div id="streaming-segment"></div>
+      </div>
+
+      <!-- Media strip (scene image + audio) -->
+      <div id="media-strip" class="empty">
+        <img id="scene-image" class="hidden" alt="Scene">
+        <div id="audio-controls">
+          <button id="audio-play-btn" class="btn-icon" title="Play/Pause">▶</button>
+          <span id="audio-track-name" class="text-secondary text-sm"></span>
+          <input type="range" id="audio-volume" min="0" max="1" step="0.05" value="0.4" style="width:80px;accent-color:var(--accent)">
+        </div>
+        <audio id="ambient-audio" loop></audio>
+      </div>
+
+      <!-- Input panel -->
+      <div id="input-panel">
+        <div id="input-row">
+          <textarea id="story-input" placeholder="What does your character do?  (Ctrl+Enter to send)" rows="2"></textarea>
+          <button id="send-btn" title="Send (Ctrl+Enter)">▶</button>
+          <button id="stop-btn" title="Stop generation" style="display:none">■</button>
+        </div>
+        <div id="action-row">
+          <button class="action-btn accent" id="branch-btn" title="Branch the story from this point">⎇ Branch here</button>
+          <button class="action-btn" id="rewind-btn" title="Open timeline to rewind">↩ Rewind</button>
+          <button class="action-btn" id="checkpoint-btn" title="Save a checkpoint (Ctrl+S)">⚑ Checkpoint</button>
+          <button class="action-btn" id="new-arc-btn" title="Start a parallel storyline">+ Parallel Arc</button>
+        </div>
+      </div>
+    </div><!-- /story-wrapper -->
+
+    <!-- ── Right Sidebar ──────────────────────────────────────────────────── -->
+    <aside id="sidebar-right">
+      <div class="sidebar-right-inner" id="sidebar-right-inner">
+        <!-- Populated by sidebar-right.js -->
+      </div>
+    </aside>
+
+  </div><!-- /main-body -->
+
+</div><!-- /app -->
+
+<!-- ── Toast notifications ─────────────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ── Modals ──────────────────────────────────────────────────────────────── -->
+
+<!-- Settings -->
+<dialog id="settings-dialog" aria-label="Settings">
+  <div class="modal-header">
+    <span class="modal-title">Settings</span>
+    <button class="modal-close" aria-label="Close">✕</button>
   </div>
-
-  <div class="preview-output">
-    <textarea id="outputPrompt" placeholder="Your generated prompt will appear here..."></textarea>
+  <div class="modal-body">
+    <div class="form-group">
+      <label for="api-key-input">Grok API Key</label>
+      <div class="api-key-row">
+        <input type="password" id="api-key-input" placeholder="xai-…" autocomplete="off">
+        <button id="test-connection" class="btn btn-ghost">Test</button>
+      </div>
+      <div id="test-connection-result"></div>
+      <p class="api-warning">
+        Your API key is stored locally in your browser and sent directly to xAI.
+        Never use this on a shared or public computer.
+      </p>
+    </div>
+    <div class="form-group">
+      <label for="model-select">Model</label>
+      <select id="model-select">
+        <option value="grok-3">Grok 3 (Recommended)</option>
+        <option value="grok-3-mini">Grok 3 Mini (Faster)</option>
+        <option value="grok-2">Grok 2</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Story Library</label>
+      <button id="open-library-btn" class="btn btn-ghost w-full">Open Story Library</button>
+    </div>
+    <div class="form-group">
+      <label>Export / Import</label>
+      <div class="flex gap-2">
+        <button id="export-story-btn" class="btn btn-ghost flex-1">Export Story JSON</button>
+        <label class="btn btn-ghost flex-1" style="cursor:pointer;justify-content:center;display:inline-flex;align-items:center;">
+          Import Story JSON
+          <input type="file" id="import-story-input" accept=".json" style="display:none">
+        </label>
+      </div>
+    </div>
   </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    <button id="settings-save" class="btn btn-primary">Save</button>
+  </div>
+</dialog>
 
-  <script>
-    function updatePrompt() {
-      const prompt = "She is a petite young woman with small to medium breasts, styled by J. Scott Campbell. " +
-        document.getElementById("hairColor").value + " hair in a " +
-        document.getElementById("hairStyle").value + ", " +
-        document.getElementById("skinTone").value + " skin, wearing " +
-        document.getElementById("lingerie").value + " lingerie and " +
-        document.getElementById("heels").value + ".";
-      document.getElementById("outputPrompt").value = prompt;
-    }
-    function copyPrompt() {
-      navigator.clipboard.writeText(document.getElementById("outputPrompt").value);
-    }
-    function downloadPrompt() {
-      const text = document.getElementById("outputPrompt").value;
-      const blob = new Blob([text], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "prompt.txt";
-      a.click();
-    }
-    function randomizeAll() {
-      updatePrompt();  // Placeholder
-    }
-  </script>
+<!-- Character Editor -->
+<dialog id="char-dialog" aria-label="Character Editor">
+  <div class="modal-header">
+    <span class="modal-title">Character</span>
+    <button class="modal-close" aria-label="Close">✕</button>
+  </div>
+  <div class="modal-tabs">
+    <button class="modal-tab active" data-panel="char-tab-identity">Identity</button>
+    <button class="modal-tab" data-panel="char-tab-backstory">Backstory</button>
+    <button class="modal-tab" data-panel="char-tab-traits">Traits</button>
+    <button class="modal-tab" data-panel="char-tab-state">State</button>
+  </div>
+  <div class="modal-body">
+    <div id="char-tab-identity" class="tab-panel active">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="char-name-input">Name *</label>
+          <input type="text" id="char-name-input" placeholder="Character name">
+        </div>
+        <div class="form-group">
+          <label for="char-role-input">Role / Class</label>
+          <input type="text" id="char-role-input" placeholder="e.g. Rogue, Scholar">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="char-appearance-input">Appearance</label>
+        <textarea id="char-appearance-input" rows="2" placeholder="Physical description..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="char-voice-input">Voice / Tone</label>
+        <input type="text" id="char-voice-input" placeholder="e.g. sardonic, earnest, mysterious">
+      </div>
+    </div>
+    <div id="char-tab-backstory" class="tab-panel">
+      <div class="form-group">
+        <label for="char-backstory-input">Backstory</label>
+        <textarea id="char-backstory-input" rows="8" placeholder="Who are they? Where do they come from? What shaped them?"></textarea>
+      </div>
+    </div>
+    <div id="char-tab-traits" class="tab-panel">
+      <div class="form-group">
+        <label>Strengths <span class="text-muted text-sm">(press Enter to add)</span></label>
+        <input type="text" id="char-strengths-input" placeholder="e.g. quick reflexes">
+        <div id="char-strengths-tags" class="tag-list mt-2"></div>
+      </div>
+      <div class="form-group">
+        <label>Weaknesses</label>
+        <input type="text" id="char-weaknesses-input" placeholder="e.g. impulsive">
+        <div id="char-weaknesses-tags" class="tag-list mt-2"></div>
+      </div>
+      <div class="form-group">
+        <label>Goals</label>
+        <input type="text" id="char-goals-input" placeholder="e.g. find the stolen artifact">
+        <div id="char-goals-tags" class="tag-list mt-2"></div>
+      </div>
+    </div>
+    <div id="char-tab-state" class="tab-panel">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="char-mood-input">Current Mood</label>
+          <input type="text" id="char-mood-input" placeholder="e.g. wary, hopeful">
+        </div>
+        <div class="form-group">
+          <label for="char-health-input">Health / Condition</label>
+          <input type="text" id="char-health-input" placeholder="e.g. healthy, injured">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button id="char-delete" class="btn btn-danger" style="display:none;margin-right:auto">Delete</button>
+    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    <button id="char-save" class="btn btn-primary">Save</button>
+  </div>
+</dialog>
+
+<!-- World Editor -->
+<dialog id="world-dialog" aria-label="World Editor">
+  <div class="modal-header">
+    <span class="modal-title">World Editor</span>
+    <button class="modal-close" aria-label="Close">✕</button>
+  </div>
+  <div class="modal-tabs">
+    <button class="modal-tab active" data-panel="world-tab-world">World</button>
+    <button class="modal-tab" data-panel="world-tab-locations">Locations</button>
+    <button class="modal-tab" data-panel="world-tab-factions">Factions</button>
+  </div>
+  <div class="modal-body">
+    <div id="world-tab-world" class="tab-panel active">
+      <div class="form-group">
+        <label for="world-name-input">World Name</label>
+        <input type="text" id="world-name-input" placeholder="Name your world">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="world-genre-input">Genre</label>
+          <input type="text" id="world-genre-input" placeholder="e.g. fantasy, sci-fi">
+        </div>
+        <div class="form-group">
+          <label for="world-tone-input">Tone</label>
+          <input type="text" id="world-tone-input" placeholder="e.g. grim, hopeful">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="world-lore-input">Global Lore</label>
+        <textarea id="world-lore-input" rows="6" placeholder="History, mythology, rules of magic, key events..."></textarea>
+      </div>
+    </div>
+    <div id="world-tab-locations" class="tab-panel">
+      <div id="locations-list"></div>
+      <button id="add-location-btn" class="btn btn-ghost w-full mt-3">+ Add Location</button>
+    </div>
+    <div id="world-tab-factions" class="tab-panel">
+      <div id="factions-list"></div>
+      <button id="add-faction-btn" class="btn btn-ghost w-full mt-3">+ Add Faction</button>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    <button id="world-save" class="btn btn-primary">Save</button>
+  </div>
+</dialog>
+
+<!-- New Story Wizard -->
+<dialog id="wizard-dialog" aria-label="New Story">
+  <div class="modal-header">
+    <span class="modal-title">New Story</span>
+    <button class="modal-close" aria-label="Close">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="wizard-progress">
+      <div class="wizard-step-dot active"></div>
+      <div class="wizard-step-dot"></div>
+      <div class="wizard-step-dot"></div>
+      <div class="wizard-step-dot"></div>
+      <div class="wizard-step-dot"></div>
+    </div>
+    <div id="wizard-steps"></div>
+  </div>
+  <div class="modal-footer">
+    <button id="wizard-back" class="btn btn-ghost" style="visibility:hidden">← Back</button>
+    <button id="wizard-next" class="btn btn-primary">Next →</button>
+  </div>
+</dialog>
+
+<!-- Story Timeline -->
+<dialog id="timeline-dialog" aria-label="Story Timeline" style="max-width:min(90vw,900px);width:auto">
+  <div class="modal-header">
+    <span class="modal-title">Story Timeline</span>
+    <button class="modal-close" aria-label="Close">✕</button>
+  </div>
+  <div class="modal-body" style="padding:var(--sp-3)">
+    <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:var(--sp-3)">
+      Click any node to navigate/rewind to that story point.
+      <span style="color:var(--accent)">■</span> Active &nbsp;
+      <span style="color:var(--mode-char)">■</span> Checkpoint
+    </p>
+    <div id="timeline-container" style="overflow:auto;max-height:60vh">
+      <svg id="timeline-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+</dialog>
+
+<!-- Story Library -->
+<dialog id="library-dialog" aria-label="Story Library">
+  <div class="modal-header">
+    <span class="modal-title">Story Library</span>
+    <button class="modal-close" aria-label="Close">✕</button>
+  </div>
+  <div class="modal-body">
+    <div id="story-list"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Close</button>
+  </div>
+</dialog>
+
+<!-- ── Bootstrap ───────────────────────────────────────────────────────────── -->
+<script type="module" src="js/main.js"></script>
+
+<script>
+  // Welcome screen quick-actions (before modules load)
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('welcome-new-btn')?.addEventListener('click', () => {
+      document.getElementById('welcome-screen')?.classList.add('hidden');
+      document.getElementById('wizard-dialog')?.showModal();
+    });
+    document.getElementById('welcome-settings-btn')?.addEventListener('click', () => {
+      document.getElementById('settings-dialog')?.showModal();
+    });
+    document.getElementById('open-timeline-btn')?.addEventListener('click', () => {
+      document.getElementById('timeline-dialog')?.showModal();
+    });
+  });
+</script>
+
 </body>
 </html>

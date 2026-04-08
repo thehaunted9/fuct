@@ -1,0 +1,54 @@
+/* ── Timeline SVG Viewer ─────────────────────────────────────────────────────── */
+#timeline-container {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  overflow: auto;
+  position: relative;
+}
+
+#timeline-svg {
+  display: block;
+  min-width: 200px;
+  min-height: 100px;
+}
+
+/* SVG node circles */
+.tl-node {
+  cursor: pointer;
+  transition: r 0.15s;
+}
+.tl-node circle {
+  fill: var(--bg-raised);
+  stroke: var(--border);
+  stroke-width: 2;
+  transition: fill 0.15s, stroke 0.15s;
+}
+.tl-node:hover circle {
+  fill: var(--bg-hover);
+  stroke: var(--text-muted);
+}
+.tl-node.active circle { fill: var(--accent-glow); stroke: var(--accent); }
+.tl-node.checkpoint circle { stroke: var(--mode-char); }
+
+.tl-label {
+  fill: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+.tl-node.active .tl-label { fill: var(--accent); }
+
+/* SVG edges */
+.tl-edge {
+  stroke: var(--border);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+/* Mini timeline in left sidebar */
+#mini-timeline {
+  height: 120px;
+  overflow: hidden;
+}

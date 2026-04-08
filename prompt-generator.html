@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Refined Prompt Generator</title>
+  <style>
+    body { background: #121212; color: #eee; font-family: 'Segoe UI', sans-serif; padding: 2rem; }
+    h1 { color: #f2994a; }
+    .section { margin-bottom: 1.5rem; border: 1px solid #444; border-radius: 6px; }
+    .section summary { cursor: pointer; background: #1e1e1e; padding: 1rem; font-size: 1.1rem; font-weight: bold; }
+    .section-content { background: #222; padding: 1rem; }
+    label { display: block; margin-top: 0.75rem; }
+    select, input[type=range], textarea, button {
+      width: 100%; padding: 0.5rem; background: #1e1e1e;
+      border: 1px solid #555; color: white; margin-top: 0.25rem;
+    }
+    textarea { height: 180px; }
+    .button-group { display: flex; gap: 1rem; margin-top: 1rem; }
+    .button-group button { flex: 1; }
+    .preview-output { margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Ultimate Prompt Generator</h1>
+
+  <label>
+    <input type="checkbox" id="nsfwToggle" onchange="updatePrompt()"> NSFW Mode
+  </label>
+
+  <label>
+    Prompt Length:
+    <input type="range" id="lengthSlider" min="1" max="3" value="2" oninput="updatePrompt()">
+  </label>
+
+  <label>
+    Platform Output Format:
+    <select id="platformFormat" onchange="updatePrompt()">
+      <option>Universal</option>
+      <option>Stable Diffusion</option>
+      <option>Dreamerland</option>
+      <option>Perchance</option>
+      <option>Sora</option>
+      <option>Photify AI</option>
+      <option>Flux</option>
+    </select>
+  </label>
+
+  <details class="section" open>
+    <summary>Physical Traits</summary>
+    <div class="section-content">
+      <label>Hair Color:<select id="hairColor"><option>Blonde</option><option>Red</option><option>Black</option></select></label>
+      <label>Hair Style:<select id="hairStyle"><option>Long and Wavy</option><option>Pixie Cut</option><option>Sleek Straight</option></select></label>
+      <label>Skin Tone:<select id="skinTone"><option>Fair</option><option>Olive</option><option>Tan</option></select></label>
+      <label>Body Type:<select id="bodyType"><option>Petite and Slender</option><option>Petite with Curves</option></select></label>
+    </div>
+  </details>
+
+  <details class="section">
+    <summary>Identity & Style</summary>
+    <div class="section-content">
+      <label>Celebrity Likeness:<select id="celebrity"><option>Emma Stone</option><option>Zendaya</option><option>Scarlett Johansson</option></select></label>
+      <label>Age Range:<select id="ageRange"><option>18–20</option><option>21–25</option><option>26–29</option></select></label>
+    </div>
+  </details>
+
+  <details class="section">
+    <summary>Wardrobe</summary>
+    <div class="section-content">
+      <label>Lingerie Style:<select id="lingerie"><option>Lace</option><option>Satin</option><option>Mesh</option></select></label>
+      <label>High Heels:<select id="heels"><option>Stilettos</option><option>Pumps</option><option>Strappy Heels</option></select></label>
+      <label>Accessories:<select id="accessories"><option>Choker</option><option>Gloves</option><option>Necklace</option></select></label>
+    </div>
+  </details>
+
+  <details class="section">
+    <summary>Art Direction</summary>
+    <div class="section-content">
+      <label>Pose:<select id="pose"><option>Standing with Hip Out</option><option>Leaning Forward</option><option>Lying on Side</option></select></label>
+      <label>Camera Angle:<select id="angle"><option>POV</option><option>Worm's Eye</option><option>Eye-Level</option></select></label>
+      <label>Composition:<select id="composition"><option>Full Body</option><option>Waist-Up</option><option>Close-Up</option></select></label>
+      <label>Lighting:<select id="lighting"><option>Soft Glow</option><option>Harsh Spotlight</option><option>Backlit</option></select></label>
+      <label>Facial Expression:<select id="expression"><option>Playful Smile</option><option>Sultry Gaze</option><option>Innocent Look</option></select></label>
+      <label>Mood:<select id="mood"><option>Playful</option><option>Mysterious</option><option>Dominant</option></select></label>
+    </div>
+  </details>
+
+  <details class="section">
+    <summary>Scene & Theme</summary>
+    <div class="section-content">
+      <label>Theme:<select id="theme"><option>Gothic</option><option>Romantic</option><option>Cyberpunk</option></select></label>
+      <label>Setting:<select id="setting"><option>Rainy Alley</option><option>Bedroom</option><option>Studio</option></select></label>
+      <label>Environment:<select id="environment"><option>Foggy</option><option>Neon-Lit</option><option>Candlelight</option></select></label>
+    </div>
+  </details>
+
+  <div class="button-group">
+    <button onclick="copyPrompt()">📋 Copy</button>
+    <button onclick="downloadPrompt()">💾 Download</button>
+    <button onclick="randomizeAll()">🎲 Randomize</button>
+  </div>
+
+  <div class="preview-output">
+    <textarea id="outputPrompt" placeholder="Your generated prompt will appear here..."></textarea>
+  </div>
+
+  <script>
+    function updatePrompt() {
+      const prompt = "She is a petite young woman with small to medium breasts, styled by J. Scott Campbell. " +
+        document.getElementById("hairColor").value + " hair in a " +
+        document.getElementById("hairStyle").value + ", " +
+        document.getElementById("skinTone").value + " skin, wearing " +
+        document.getElementById("lingerie").value + " lingerie and " +
+        document.getElementById("heels").value + ".";
+      document.getElementById("outputPrompt").value = prompt;
+    }
+    function copyPrompt() {
+      navigator.clipboard.writeText(document.getElementById("outputPrompt").value);
+    }
+    function downloadPrompt() {
+      const text = document.getElementById("outputPrompt").value;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "prompt.txt";
+      a.click();
+    }
+    function randomizeAll() {
+      updatePrompt();  // Placeholder
+    }
+  </script>
+</body>
+</html>
