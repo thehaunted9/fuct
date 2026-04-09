@@ -98,6 +98,17 @@
         <audio id="ambient-audio" loop></audio>
       </div>
 
+      <!-- TTS control bar -->
+      <div id="tts-bar">
+        <span>🔊 Read aloud:</span>
+        <button id="tts-play-all" class="tts-btn" title="Read entire story aloud">▶ Play all</button>
+        <button id="tts-pause"    class="tts-btn" title="Pause" style="display:none">⏸ Pause</button>
+        <button id="tts-resume"   class="tts-btn" title="Resume" style="display:none">▶ Resume</button>
+        <button id="tts-stop"     class="tts-btn danger" title="Stop" style="display:none">■ Stop</button>
+        <div style="flex:1"></div>
+        <button id="tts-settings-btn" class="tts-btn" title="Voice settings">🎙 Voices</button>
+      </div>
+
       <!-- Input panel -->
       <div id="input-panel">
         <div id="input-row">
@@ -353,6 +364,21 @@
   </div>
   <div class="modal-footer">
     <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Close</button>
+  </div>
+</dialog>
+
+<!-- TTS Voice Settings -->
+<dialog id="tts-dialog" aria-label="Voice Settings">
+  <div class="modal-header">
+    <span class="modal-title">🎙 Voice Settings</span>
+    <button class="modal-close" aria-label="Close">✕</button>
+  </div>
+  <div class="modal-body" id="tts-modal-body">
+    <!-- Populated by tts-settings.js -->
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    <button id="tts-save" class="btn btn-primary">Save Voices</button>
   </div>
 </dialog>
 

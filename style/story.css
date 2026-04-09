@@ -97,6 +97,74 @@
 }
 .user-action-echo.narrator-echo .actor-label { color: var(--mode-narr); }
 
+/* ── TTS per-segment play button ─────────────────────────────────────────────── */
+.tts-play-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--border-radius-sm);
+  color: var(--text-muted);
+  margin-top: var(--sp-2);
+  transition: color 0.15s, background 0.15s;
+}
+.story-segment:hover .tts-play-btn { display: inline-flex; align-items: center; gap: 4px; }
+.tts-play-btn:hover { color: var(--accent); background: var(--accent-glow); }
+.tts-play-btn::after { content: 'Read aloud'; font-size: 0.72rem; font-family: var(--font-ui); }
+
+/* ── TTS active highlight ────────────────────────────────────────────────────── */
+.story-segment.tts-active {
+  background: rgba(242, 153, 74, 0.06);
+  border-radius: var(--border-radius);
+  outline: 1px solid rgba(242, 153, 74, 0.2);
+  transition: background 0.3s;
+}
+
+/* ── TTS control bar ─────────────────────────────────────────────────────────── */
+#tts-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+#tts-bar .tts-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+}
+#tts-bar .tts-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+#tts-bar .tts-btn.danger:hover { border-color: var(--danger); color: var(--danger); background: rgba(224,85,85,0.1); }
+
+/* ── TTS Voice Card (in settings dialog) ─────────────────────────────────────── */
+.tts-voice-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.tts-sliders {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+@media (max-width: 540px) { .tts-sliders { grid-template-columns: 1fr; } }
+
 /* ── Streaming cursor ────────────────────────────────────────────────────────── */
 #stream-cursor {
   display: inline-block;

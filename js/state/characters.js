@@ -102,6 +102,12 @@ function _defaults(id, data) {
     relationships: data.relationships ?? {},
     appearance: data.appearance ?? '',
     voiceTone: data.voiceTone ?? '',
-    currentState: data.currentState ?? { mood: 'neutral', health: 'healthy' }
+    currentState: data.currentState ?? { mood: 'neutral', health: 'healthy' },
+    ttsProfile: data.ttsProfile ?? {
+      voiceURI: '',    // '' = browser default voice
+      rate: 1.0,       // 0.5 – 2.0
+      pitch: 1.0,      // 0.0 – 2.0
+      volume: 1.0      // 0.0 – 1.0
+    }
   };
 }

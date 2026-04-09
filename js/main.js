@@ -30,6 +30,8 @@ import { initCharacterEditor } from './ui/character-editor.js';
 import { initWorldEditor } from './ui/world-editor.js';
 import { initTimelineViewer } from './ui/timeline-viewer.js';
 import { initMediaPanel } from './ui/media-panel.js';
+import { initTTS } from './ui/tts-engine.js';
+import { initTTSSettings } from './ui/tts-settings.js';
 import bus from './utils/events.js';
 import { uid } from './utils/uid.js';
 
@@ -48,6 +50,8 @@ async function boot() {
   initWorldEditor();
   initTimelineViewer();
   initMediaPanel();
+  initTTS();
+  initTTSSettings();
 
   // Wire story generation events
   bus.on('story:generate', _onGenerate);

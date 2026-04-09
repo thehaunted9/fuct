@@ -7,6 +7,7 @@ import { parseMarkdown } from '../utils/markdown.js';
 import bus from '../utils/events.js';
 import store from '../state/store.js';
 import { getActiveNode, getTree } from '../state/story-tree.js';
+import { stop as ttsStop } from './tts-engine.js';
 
 let _storyContent = null;
 let _streamingSegment = null;
@@ -31,6 +32,26 @@ export function initStoryPanel() {
   bus.on('stream:start', ({ userInput, mode, actorName }) => _onStreamStart(userInput, mode, actorName));
   bus.on('stream:end', () => _onStreamEnd());
   bus.on('stream:error', ({ message }) => _onStreamError(message));
+
+  // TTS state → update global play-all button
+  bus.on('tts:state', ({ isPlaying, isPaused }) => _updateTTSBar(isPlaying, isPaused));
+
+  // Delegate play-segment clicks
+  _storyContent.addEventListener('click', e => {
+    const btn = e.target.closest('.tts-play-btn');
+    if (btn) {
+      e.stopPropagation();
+      const nodeId = btn.closest('.story-segment')?.dataset.node;
+      if (nodeId) bus.emit('tts:play-segment', { nodeId });
+    }
+  });
+
+  // Global TTS controls
+  document.getElementById('tts-play-all')?.addEventListener('click', () => bus.emit('tts:play-all'));
+  document.getElementById('tts-pause')?.addEventListener('click',    () => bus.emit('tts:pause'));
+  document.getElementById('tts-resume')?.addEventListener('click',   () => bus.emit('tts:resume'));
+  document.getElementById('tts-stop')?.addEventListener('click',     () => bus.emit('tts:stop'));
+  document.getElementById('tts-settings-btn')?.addEventListener('click', () => bus.emit('tts:settings:open'));
 }
 
 /**
@@ -79,6 +100,7 @@ function _segmentHTML(node) {
   return `<div class="story-segment" data-node="${node.id}">
     ${echoHtml}
     <div class="story-text">${parseMarkdown(text)}</div>
+    <button class="tts-play-btn" title="Read this segment aloud">🔊</button>
   </div>`;
 }
 
@@ -146,6 +168,18 @@ function _onStreamError(message) {
 function _scrollToBottom() {
   const panel = document.getElementById('story-panel');
   if (panel) panel.scrollTop = panel.scrollHeight;
+}
+
+function _updateTTSBar(isPlaying, isPaused) {
+  const playAllBtn = document.getElementById('tts-play-all');
+  const pauseBtn   = document.getElementById('tts-pause');
+  const resumeBtn  = document.getElementById('tts-resume');
+  const stopBtn    = document.getElementById('tts-stop');
+
+  if (playAllBtn) playAllBtn.style.display = isPlaying ? 'none' : 'inline-flex';
+  if (pauseBtn)   pauseBtn.style.display   = isPlaying && !isPaused ? 'inline-flex' : 'none';
+  if (resumeBtn)  resumeBtn.style.display  = isPaused ? 'inline-flex' : 'none';
+  if (stopBtn)    stopBtn.style.display    = isPlaying || isPaused ? 'inline-flex' : 'none';
 }
 
 function _escHtml(str) {
