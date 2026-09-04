@@ -6,8 +6,7 @@ import bus from '../utils/events.js';
 import store from '../state/store.js';
 import { getSession } from '../state/session.js';
 import { getWorld, getActiveLocation } from '../state/world.js';
-import { getActiveCharacter } from '../state/characters.js';
-import { getTree, switchArc } from '../state/story-tree.js';
+import { getTree } from '../state/story-tree.js';
 import { exportStoryJSON, importStoryJSON } from '../persistence/autosave.js';
 import { listStories, deleteStory } from '../persistence/db.js';
 
@@ -18,6 +17,7 @@ export function initAppShell() {
   _initToastSystem();
   _initImportExport();
   _initLibrary();
+  _initDialogCancelButtons();
   _subscribeToStateUpdates();
 }
 
@@ -43,8 +43,12 @@ function _initNavActions() {
   });
 
   document.getElementById('new-story-btn')?.addEventListener('click', () => {
-    bus.emit('wizard:open');
+    _openNewStoryWizard();
   });
+
+  document.getElementById('welcome-new-btn')?.addEventListener('click', _openNewStoryWizard);
+  document.getElementById('welcome-settings-btn')?.addEventListener('click', () => bus.emit('settings:open'));
+  document.getElementById('open-timeline-btn')?.addEventListener('click', () => bus.emit('timeline:open'));
 }
 
 // ─── Story Title Editing ──────────────────────────────────────────────────────
@@ -80,6 +84,8 @@ function _subscribeToStateUpdates() {
   // Arc creation event
   bus.on('arc:create', () => _promptNewArc());
   bus.on('sidebar:refresh', () => {});
+  bus.on('story:started', _hideWelcome);
+  bus.on('story:loaded', _hideWelcome);
 }
 
 function _updateBreadcrumb() {
@@ -125,6 +131,7 @@ function _initToastSystem() {
 function _initImportExport() {
   document.getElementById('export-story-btn')?.addEventListener('click', () => {
     try {
+      if (!getSession().storyId) throw new Error('Start or load a story first.');
       exportStoryJSON();
       bus.emit('toast', { message: 'Story exported!', type: 'success' });
     } catch (e) {
@@ -135,6 +142,11 @@ function _initImportExport() {
   document.getElementById('import-story-input')?.addEventListener('change', async e => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (getSession().isStreaming) {
+      bus.emit('toast', { message: 'Stop the current generation before importing a story.', type: 'error' });
+      e.target.value = '';
+      return;
+    }
     try {
       await importStoryJSON(file);
       bus.emit('toast', { message: 'Story imported successfully!', type: 'success' });
@@ -166,14 +178,14 @@ async function _showLibrary() {
     listEl.innerHTML = '<div class="empty-state"><div class="icon">📖</div>No saved stories yet.</div>';
   } else {
     listEl.innerHTML = list.map(s => `
-      <div class="story-list-item" data-id="${s.id}">
+      <div class="story-list-item" data-id="${_esc(s.id)}">
         <div>
           <div class="story-list-name">${_esc(s.title ?? 'Untitled')}</div>
           <div class="story-list-date">${_formatDate(s.updatedAt)}</div>
         </div>
         <div class="story-list-actions">
-          <button class="btn btn-ghost load-story-btn" data-id="${s.id}">Load</button>
-          <button class="btn btn-danger delete-story-btn" data-id="${s.id}">Delete</button>
+          <button class="btn btn-ghost load-story-btn" data-id="${_esc(s.id)}">Load</button>
+          <button class="btn btn-danger delete-story-btn" data-id="${_esc(s.id)}">Delete</button>
         </div>
       </div>
     `).join('');
@@ -210,13 +222,33 @@ function _promptNewArc() {
   bus.emit('arc:create:confirmed', { name: name.trim() });
 }
 
+function _openNewStoryWizard() {
+  if (getSession().isStreaming) {
+    bus.emit('toast', { message: 'Stop the current generation before starting a new story.', type: 'error' });
+    return;
+  }
+  bus.emit('wizard:open');
+}
+
+function _hideWelcome() {
+  document.getElementById('welcome-screen')?.classList.add('hidden');
+}
+
+function _initDialogCancelButtons() {
+  document.querySelectorAll('.modal-cancel').forEach(button => {
+    button.addEventListener('click', () => button.closest('dialog')?.close());
+  });
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function _esc(str) {
   return String(str ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function _formatDate(ts) {

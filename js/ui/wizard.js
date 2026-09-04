@@ -4,9 +4,6 @@
  */
 
 import bus from '../utils/events.js';
-import { initWorld, createLocation } from '../state/world.js';
-import { createCharacter, setActiveCharacter } from '../state/characters.js';
-import { uid } from '../utils/uid.js';
 
 const GENRES = [
   { value: 'fantasy',     icon: '⚔️',  name: 'Fantasy',       desc: 'Magic, quests, ancient realms' },
@@ -161,7 +158,7 @@ function _stepHTML(step) {
       </div>
       <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--border-radius);padding:var(--sp-3);margin-top:var(--sp-4);font-size:0.8rem;color:var(--text-secondary)">
         <strong style="color:var(--text-primary)">Ready to begin:</strong><br>
-        ${_state.worldName || 'Your world'} · ${_state.locationName || 'Starting location'} · ${_state.charName || 'Your character'}
+        ${_esc(_state.worldName || 'Your world')} · ${_esc(_state.locationName || 'Starting location')} · ${_esc(_state.charName || 'Your character')}
       </div>`;
 
     default: return '';
@@ -232,33 +229,18 @@ function _validate(step) {
 }
 
 function _finish() {
-  // Create world
-  initWorld({
-    name: _state.worldName,
-    genre: _state.genre,
-    tone: _state.tone,
-    globalLore: _state.worldLore,
-    startingLocation: {
-      name: _state.locationName,
-      description: _state.locationDesc,
-      weather: _state.locationWeather
-    }
-  });
-
-  // Create character
-  const charId = createCharacter({
-    name: _state.charName,
-    role: _state.charRole,
-    backstory: _state.charBackstory,
-    goals: _state.charGoals ? _state.charGoals.split(',').map(g => g.trim()).filter(Boolean) : [],
-    isPlayer: true
-  });
-  setActiveCharacter(charId);
-
-  // Close wizard and signal story engine to generate opening
+  // Main owns the transaction so it can save the current story before replacing state.
   document.getElementById('wizard-dialog')?.close();
 
-  bus.emit('story:begin', { initialConflict: _state.initialConflict });
+  bus.emit('story:begin', {
+    setup: {
+      ..._state,
+      charGoals: _state.charGoals
+        ? _state.charGoals.split(',').map(goal => goal.trim()).filter(Boolean)
+        : []
+    },
+    initialConflict: _state.initialConflict
+  });
 }
 
 function _esc(str) {
@@ -267,24 +249,4 @@ function _esc(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-export function wizardHTML() {
-  return `
-<dialog id="wizard-dialog" aria-label="New Story">
-  <div class="modal-header">
-    <span class="modal-title">New Story</span>
-    <button class="modal-close" aria-label="Close">✕</button>
-  </div>
-  <div class="modal-body">
-    <div class="wizard-progress">
-      ${[0,1,2,3,4].map(i => `<div class="wizard-step-dot"></div>`).join('')}
-    </div>
-    <div id="wizard-steps"></div>
-  </div>
-  <div class="modal-footer">
-    <button id="wizard-back" class="btn btn-ghost">← Back</button>
-    <button id="wizard-next" class="btn btn-primary">Next →</button>
-  </div>
-</dialog>`;
 }

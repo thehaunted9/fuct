@@ -5,12 +5,15 @@
 
 import store from './store.js';
 
+const persistedApiKey = localStorage.getItem('grok_api_key') ?? '';
+
 store.init('session', {
   mode: 'character',          // 'character' | 'narrator' | 'worldbuilder'
   isStreaming: false,
   streamAbortController: null,
   pendingBranchFromNodeId: null,
-  apiKey: localStorage.getItem('grok_api_key') ?? '',
+  apiKey: sessionStorage.getItem('grok_api_key') ?? persistedApiKey,
+  rememberApiKey: Boolean(persistedApiKey),
   model: localStorage.getItem('grok_model') ?? 'grok-4',
   storyId: null,              // IndexedDB record id for current story
   initialized: false          // true after new-story wizard completes
@@ -32,7 +35,6 @@ export function abortStream() {
   const { streamAbortController } = store.get('session');
   if (streamAbortController) {
     streamAbortController.abort();
-    store.patch('session', { isStreaming: false, streamAbortController: null });
   }
 }
 
@@ -44,9 +46,11 @@ export function clearPendingBranch() {
   store.patch('session', { pendingBranchFromNodeId: null });
 }
 
-export function setApiKey(key) {
-  localStorage.setItem('grok_api_key', key);
-  store.patch('session', { apiKey: key });
+export function setApiKey(key, remember = false) {
+  sessionStorage.setItem('grok_api_key', key);
+  if (remember) localStorage.setItem('grok_api_key', key);
+  else localStorage.removeItem('grok_api_key');
+  store.patch('session', { apiKey: key, rememberApiKey: remember });
 }
 
 export function setModel(model) {

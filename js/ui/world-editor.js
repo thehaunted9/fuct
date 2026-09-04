@@ -9,6 +9,7 @@ import {
   addFaction, updateFaction, removeFaction,
   addLoreEntry, removeLoreEntry
 } from '../state/world.js';
+import { safeMediaUrl } from '../utils/urls.js';
 
 export function initWorldEditor() {
   const dialog = document.getElementById('world-dialog');
@@ -79,16 +80,20 @@ function _populateLocationsTab() {
         <label>Description</label>
         <textarea class="loc-desc" data-id="${loc.id}" rows="2">${_esc(loc.description)}</textarea>
       </div>
-      <div class="form-row">
+        <div class="form-row">
         <div class="form-group">
           <label>Weather</label>
           <input type="text" class="loc-weather" data-id="${loc.id}" value="${_esc(loc.weather)}" placeholder="e.g. rainy">
         </div>
-        <div class="form-group">
-          <label>Image URL</label>
-          <input type="url" class="loc-image" data-id="${loc.id}" value="${_esc(loc.imageUrl)}" placeholder="https://…">
+          <div class="form-group">
+            <label>Image URL</label>
+            <input type="url" class="loc-image" data-id="${loc.id}" value="${_esc(loc.imageUrl)}" placeholder="https://…">
+          </div>
         </div>
-      </div>
+        <div class="form-group">
+          <label>Ambient Soundtrack URL</label>
+          <input type="url" class="loc-audio" data-id="${loc.id}" value="${_esc(loc.ambientSoundtrack)}" placeholder="https://…">
+        </div>
       <div class="form-group">
         <label>Local Conflicts (one per line)</label>
         <textarea class="loc-conflicts" data-id="${loc.id}" rows="2">${_esc((loc.localConflicts ?? []).join('\n'))}</textarea>
@@ -197,18 +202,28 @@ function _save() {
 
   // Save all location edits
   const container = document.getElementById('locations-list');
-  container?.querySelectorAll('.location-card').forEach(card => {
+  const locationCards = [...(container?.querySelectorAll('.location-card') ?? [])];
+  for (const card of locationCards) {
     const id = card.dataset.locId;
-    if (!id) return;
+    if (!id) continue;
+    const rawImageUrl = card.querySelector('.loc-image')?.value?.trim() ?? '';
+    const rawAudioUrl = card.querySelector('.loc-audio')?.value?.trim() ?? '';
+    const imageUrl = safeMediaUrl(rawImageUrl);
+    const ambientSoundtrack = safeMediaUrl(rawAudioUrl);
+    if ((rawImageUrl && !imageUrl) || (rawAudioUrl && !ambientSoundtrack)) {
+      bus.emit('toast', { message: 'Media URLs must use http, https, blob, or a relative path.', type: 'error' });
+      return;
+    }
     updateLocation(id, {
       name: card.querySelector('.loc-name')?.value?.trim() ?? '',
       description: card.querySelector('.loc-desc')?.value?.trim() ?? '',
       weather: card.querySelector('.loc-weather')?.value?.trim() ?? '',
-      imageUrl: card.querySelector('.loc-image')?.value?.trim() ?? '',
+      imageUrl,
+      ambientSoundtrack,
       localConflicts: (card.querySelector('.loc-conflicts')?.value ?? '')
         .split('\n').map(l => l.trim()).filter(Boolean)
     });
-  });
+  }
 
   // Save faction edits
   const fContainer = document.getElementById('factions-list');
@@ -240,55 +255,4 @@ function _setVal(id, val) { const el = document.getElementById(id); if (el) el.v
 function _getVal(id) { return document.getElementById(id)?.value?.trim() ?? ''; }
 function _esc(str) {
   return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-export function worldEditorHTML() {
-  return `
-<dialog id="world-dialog" aria-label="World Editor">
-  <div class="modal-header">
-    <span class="modal-title">World Editor</span>
-    <button class="modal-close" aria-label="Close">✕</button>
-  </div>
-  <div class="modal-tabs">
-    <button class="modal-tab active" data-panel="world-tab-world">World</button>
-    <button class="modal-tab" data-panel="world-tab-locations">Locations</button>
-    <button class="modal-tab" data-panel="world-tab-factions">Factions</button>
-  </div>
-  <div class="modal-body">
-    <div id="world-tab-world" class="tab-panel active">
-      <div class="form-group">
-        <label for="world-name-input">World Name</label>
-        <input type="text" id="world-name-input" placeholder="Name your world">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="world-genre-input">Genre</label>
-          <input type="text" id="world-genre-input" placeholder="e.g. fantasy, sci-fi">
-        </div>
-        <div class="form-group">
-          <label for="world-tone-input">Tone</label>
-          <input type="text" id="world-tone-input" placeholder="e.g. grim, hopeful">
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="world-lore-input">Global Lore</label>
-        <textarea id="world-lore-input" rows="6" placeholder="History, mythology, rules of magic, key events..."></textarea>
-      </div>
-    </div>
-
-    <div id="world-tab-locations" class="tab-panel">
-      <div id="locations-list"></div>
-      <button id="add-location-btn" class="btn btn-ghost w-full mt-3">+ Add Location</button>
-    </div>
-
-    <div id="world-tab-factions" class="tab-panel">
-      <div id="factions-list"></div>
-      <button id="add-faction-btn" class="btn btn-ghost w-full mt-3">+ Add Faction</button>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-    <button id="world-save" class="btn btn-primary">Save</button>
-  </div>
-</dialog>`;
 }

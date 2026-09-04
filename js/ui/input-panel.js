@@ -6,9 +6,8 @@
 import bus from '../utils/events.js';
 import store from '../state/store.js';
 import { getSession, setMode, abortStream } from '../state/session.js';
-import { getTree, branchFrom, markCheckpoint, navigateTo, createArc, switchArc } from '../state/story-tree.js';
+import { getTree, branchFrom, markCheckpoint } from '../state/story-tree.js';
 import { getActiveCharacter } from '../state/characters.js';
-import { getActiveLocation } from '../state/world.js';
 
 export function initInputPanel() {
   const input = document.getElementById('story-input');
@@ -37,7 +36,7 @@ export function initInputPanel() {
   });
 
   sendBtn.addEventListener('click', _submit);
-  stopBtn?.addEventListener('click', () => { abortStream(); _setStreaming(false); });
+  stopBtn?.addEventListener('click', abortStream);
 
   // Mode buttons
   document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -89,6 +88,7 @@ function _submit() {
 }
 
 function _branchHere() {
+  if (getSession().isStreaming) return;
   const tree = getTree();
   const nodeId = tree.activeNodeId;
   if (!nodeId) return;
@@ -98,10 +98,12 @@ function _branchHere() {
 }
 
 function _showRewindPicker() {
+  if (getSession().isStreaming) return;
   bus.emit('timeline:open');
 }
 
 function _checkpoint() {
+  if (getSession().isStreaming) return;
   markCheckpoint();
   bus.emit('toast', { message: 'Checkpoint saved. You can rewind here anytime.', type: 'success' });
   bus.emit('sidebar:refresh');
@@ -109,6 +111,7 @@ function _checkpoint() {
 }
 
 function _newArc() {
+  if (getSession().isStreaming) return;
   bus.emit('arc:create');
 }
 
@@ -122,6 +125,10 @@ function _setStreaming(isStreaming) {
     stopBtn.style.display = isStreaming ? 'flex' : 'none';
   }
   if (input) input.disabled = isStreaming;
+  ['branch-btn', 'rewind-btn', 'checkpoint-btn', 'new-arc-btn'].forEach(id => {
+    const button = document.getElementById(id);
+    if (button) button.disabled = isStreaming;
+  });
 }
 
 function _updateModeUI(mode) {

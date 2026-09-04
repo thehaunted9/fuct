@@ -5,7 +5,7 @@
 
 import store from '../state/store.js';
 import bus from '../utils/events.js';
-import { getActiveCharacter, getAllCharacters } from '../state/characters.js';
+import { getActiveCharacter, getAllCharacters, setActiveCharacter } from '../state/characters.js';
 import { getWorld, getActiveLocation, getAllLocations } from '../state/world.js';
 
 export function initSidebarRight() {
@@ -57,6 +57,14 @@ function _charCardHTML(char, allChars) {
         <button class="btn-icon" id="edit-char-btn" data-id="${char.id}" title="Edit character">✏️</button>
       </div>
       <div class="char-stat-row">
+        ${allChars.length > 1 ? `
+          <div>
+            <div class="char-stat-label">Active Character</div>
+            <select id="active-character-select">
+              ${allChars.map(item => `<option value="${_esc(item.id)}"${item.id === char.id ? ' selected' : ''}>${_esc(item.name)}</option>`).join('')}
+            </select>
+          </div>
+        ` : ''}
         ${char.currentState ? `
           <div>
             <div class="char-stat-label">State</div>
@@ -145,6 +153,11 @@ function _loreCardHTML(loc) {
 }
 
 function _attachListeners() {
+  document.getElementById('active-character-select')?.addEventListener('change', event => {
+    setActiveCharacter(event.target.value);
+    bus.emit('sidebar:refresh');
+  });
+
   document.getElementById('edit-char-btn')?.addEventListener('click', e => {
     bus.emit('char:edit', { id: e.currentTarget.dataset.id });
   });
@@ -163,7 +176,8 @@ function _attachListeners() {
 }
 
 function _esc(str) {
-  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function _stateStr(state) {

@@ -5,6 +5,7 @@
 
 import store from '../state/store.js';
 import { getActiveLocation } from '../state/world.js';
+import { safeMediaUrl } from '../utils/urls.js';
 
 let _audio = null;
 
@@ -37,8 +38,10 @@ function _update() {
   const loc = getActiveLocation();
   const strip = document.getElementById('media-strip');
 
-  const hasImage = !!loc?.imageUrl;
-  const hasAudio = !!loc?.ambientSoundtrack;
+  const imageUrl = safeMediaUrl(loc?.imageUrl);
+  const audioUrl = safeMediaUrl(loc?.ambientSoundtrack);
+  const hasImage = Boolean(imageUrl);
+  const hasAudio = Boolean(audioUrl);
 
   if (!hasImage && !hasAudio) {
     if (strip) strip.classList.add('empty');
@@ -51,7 +54,7 @@ function _update() {
   const img = document.getElementById('scene-image');
   if (img) {
     if (hasImage) {
-      img.src = loc.imageUrl;
+      img.src = imageUrl;
       img.classList.remove('hidden');
     } else {
       img.src = '';
@@ -62,7 +65,7 @@ function _update() {
   // Audio
   const trackName = document.getElementById('audio-track-name');
   if (hasAudio && _audio) {
-    const src = loc.ambientSoundtrack;
+    const src = audioUrl;
     if (_audio.src !== src) {
       _audio.src = src;
       _audio.loop = true;

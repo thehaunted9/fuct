@@ -4,14 +4,13 @@
  */
 
 // ── State ────────────────────────────────────────────────────────────────────
-import store from './state/store.js';
 import { getSession, setStreaming, setStoryId, setInitialized } from './state/session.js';
-import { appendNode, initTree, getTree, finalizeNodeText, getHistoryMessages, createArc } from './state/story-tree.js';
-import { getActiveCharacter, getAllCharacters } from './state/characters.js';
-import { getWorld, getActiveLocation, setActiveLocation } from './state/world.js';
+import { appendNode, initTree, getTree, finalizeNodeText, getHistoryMessages } from './state/story-tree.js';
+import { createCharacter, getActiveCharacter, getAllCharacters, loadCharacters, setActiveCharacter } from './state/characters.js';
+import { getWorld, getActiveLocation, initWorld, setActiveLocation } from './state/world.js';
 
 // ── Persistence ───────────────────────────────────────────────────────────────
-import { triggerAutosave, loadStoryIntoStore } from './persistence/autosave.js';
+import { forceSave, initAutosave, loadStoryIntoStore } from './persistence/autosave.js';
 import { listStories } from './persistence/db.js';
 
 // ── API ───────────────────────────────────────────────────────────────────────
@@ -35,6 +34,8 @@ import { initTTSSettings } from './ui/tts-settings.js';
 import bus from './utils/events.js';
 import { uid } from './utils/uid.js';
 
+let _generationInFlight = false;
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 
 async function boot() {
@@ -52,6 +53,7 @@ async function boot() {
   initMediaPanel();
   initTTS();
   initTTSSettings();
+  initAutosave();
 
   // Wire story generation events
   bus.on('story:generate', _onGenerate);
@@ -81,7 +83,7 @@ async function boot() {
 
 async function _onGenerate({ userInput, mode }) {
   const session = getSession();
-  if (session.isStreaming) return;
+  if (session.isStreaming || _generationInFlight) return;
   if (!session.apiKey) {
     bus.emit('toast', { message: 'Add your Grok API key in Settings (⚙).', type: 'error' });
     return;
@@ -99,12 +101,26 @@ async function _onGenerate({ userInput, mode }) {
   const allChars = Object.values(getAllCharacters());
   const historyMessages = getHistoryMessages(tree.activeNodeId, 15);
 
-  const systemPrompt = buildSystemPrompt({ world, location, activeChar: char, allChars, mode });
-  const messages = buildMessages({ historyMessages, userInput, mode, activeChar: char });
+  const arc = tree.arcs[tree.activeArcId];
+  const prompt = tree.activeArcId !== 'arc_main'
+    ? buildArcPrompt({
+        arcName: arc?.name ?? 'Parallel Arc',
+        world,
+        location,
+        character: char,
+        allChars,
+        historyMessages,
+        userInput,
+        mode
+      })
+    : {
+        systemPrompt: buildSystemPrompt({ world, location, activeChar: char, allChars, mode }),
+        messages: buildMessages({ historyMessages, userInput, mode, activeChar: char })
+      };
 
   await _stream({
-    systemPrompt,
-    messages,
+    systemPrompt: prompt.systemPrompt,
+    messages: prompt.messages,
     userInput,
     mode,
     actorName: char?.name ?? 'Player',
@@ -112,17 +128,52 @@ async function _onGenerate({ userInput, mode }) {
       activeCharacterId: char?.id ?? null,
       locationId: world?.activeLocationId ?? null,
       activeArcId: tree.activeArcId
-    }
+    },
+    streamTarget: { arcId: tree.activeArcId, parentNodeId: tree.activeNodeId }
   });
 }
 
-async function _onStoryBegin({ initialConflict }) {
+async function _onStoryBegin({ setup, initialConflict }) {
   const session = getSession();
+  if (session.isStreaming || _generationInFlight) {
+    bus.emit('toast', { message: 'Stop the current generation before starting a new story.', type: 'error' });
+    return;
+  }
   if (!session.apiKey) {
     bus.emit('toast', { message: 'Set your Grok API key in Settings before starting.', type: 'error' });
     bus.emit('settings:open');
     return;
   }
+
+  try {
+    await forceSave();
+  } catch (err) {
+    bus.emit('toast', { message: `Could not save the current story: ${err.message}`, type: 'error' });
+    return;
+  }
+  setStoryId(null);
+
+  initWorld({
+    name: setup.worldName,
+    genre: setup.genre,
+    tone: setup.tone,
+    globalLore: setup.worldLore,
+    startingLocation: {
+      name: setup.locationName,
+      description: setup.locationDesc,
+      weather: setup.locationWeather
+    }
+  });
+
+  loadCharacters({ all: {}, activeId: null });
+  const charId = createCharacter({
+    name: setup.charName,
+    role: setup.charRole,
+    backstory: setup.charBackstory,
+    goals: setup.charGoals,
+    isPlayer: true
+  });
+  setActiveCharacter(charId);
 
   const world = getWorld();
   const location = getActiveLocation();
@@ -138,6 +189,7 @@ async function _onStoryBegin({ initialConflict }) {
   });
 
   setInitialized(true);
+  bus.emit('story:started');
 
   const { systemPrompt, messages } = buildOpeningPrompt({
     world,
@@ -157,6 +209,7 @@ async function _onStoryBegin({ initialConflict }) {
       locationId: world?.activeLocationId ?? null,
       activeArcId: 'arc_main'
     },
+    streamTarget: { openingNodeId: getTree()?.rootId },
     isOpening: true
   });
 
@@ -165,10 +218,18 @@ async function _onStoryBegin({ initialConflict }) {
 
 async function _onTransition({ fromLocationName, toLocation }) {
   const session = getSession();
-  if (!session.apiKey || !toLocation) return;
+  if (!session.apiKey || !toLocation || session.isStreaming || _generationInFlight) {
+    if (session.isStreaming || _generationInFlight) {
+      bus.emit('toast', { message: 'Wait for the current generation to finish before traveling.', type: 'error' });
+    }
+    return;
+  }
 
   const world = getWorld();
+  const tree = getTree();
   const char = getActiveCharacter();
+  const previousLocationId = world?.activeLocationId ?? null;
+  setActiveLocation(toLocation.id);
 
   const { systemPrompt, messages } = buildTransitionPrompt({
     fromLocationName,
@@ -177,7 +238,7 @@ async function _onTransition({ fromLocationName, toLocation }) {
     activeChar: char
   });
 
-  await _stream({
+  const completed = await _stream({
     systemPrompt,
     messages,
     userInput: `[Travel to ${toLocation.name}]`,
@@ -186,16 +247,30 @@ async function _onTransition({ fromLocationName, toLocation }) {
     sessionSnapshot: {
       activeCharacterId: char?.id ?? null,
       locationId: toLocation.id,
-      activeArcId: getTree()?.activeArcId ?? 'arc_main'
-    }
+      activeArcId: tree?.activeArcId ?? 'arc_main'
+    },
+    streamTarget: { arcId: tree?.activeArcId, parentNodeId: tree?.activeNodeId }
   });
+
+  if (!completed && previousLocationId) setActiveLocation(previousLocationId);
 
   bus.emit('sidebar:refresh');
 }
 
 // ── Core Streaming Engine ─────────────────────────────────────────────────────
 
-async function _stream({ systemPrompt, messages, userInput, mode, actorName, sessionSnapshot, isOpening = false }) {
+async function _stream({
+  systemPrompt,
+  messages,
+  userInput,
+  mode,
+  actorName,
+  sessionSnapshot,
+  streamTarget,
+  isOpening = false
+}) {
+  if (_generationInFlight || getSession().isStreaming) return false;
+  _generationInFlight = true;
   const session = getSession();
   const abortController = new AbortController();
   setStreaming(true, abortController);
@@ -203,7 +278,7 @@ async function _stream({ systemPrompt, messages, userInput, mode, actorName, ses
   bus.emit('stream:start', { userInput, mode, actorName });
 
   let fullText = '';
-  let nodeId = null;
+  let completed = false;
 
   try {
     const gen = streamGrok({
@@ -223,34 +298,44 @@ async function _stream({ systemPrompt, messages, userInput, mode, actorName, ses
     // Persist the completed node
     if (isOpening) {
       // Update root node text
-      const tree = getTree();
-      if (tree?.rootId) {
-        finalizeNodeText(tree.rootId, fullText, fullText);
+      if (streamTarget?.openingNodeId) {
+        finalizeNodeText(streamTarget.openingNodeId, fullText, fullText);
       }
     } else {
-      nodeId = appendNode({
+      appendNode({
         userInput,
         narrativeText: fullText,
         deltaText: fullText,
         actorId: mode === 'narrator' ? 'narrator' : (sessionSnapshot?.activeCharacterId ?? 'narrator'),
-        sessionSnapshot
+        sessionSnapshot,
+        arcId: streamTarget?.arcId,
+        parentId: streamTarget?.parentNodeId
       });
     }
 
     bus.emit('stream:end');
-    triggerAutosave();
+    completed = true;
 
   } catch (err) {
     if (err.name === 'AbortError') {
       // User cancelled — still save what we have
-      if (fullText && !isOpening) {
-        appendNode({
-          userInput,
-          narrativeText: fullText,
-          deltaText: fullText,
-          actorId: mode === 'narrator' ? 'narrator' : (sessionSnapshot?.activeCharacterId ?? 'narrator'),
-          sessionSnapshot
-        });
+      if (fullText) {
+        if (isOpening) {
+          if (streamTarget?.openingNodeId) {
+            finalizeNodeText(streamTarget.openingNodeId, fullText, fullText);
+          }
+        } else {
+          appendNode({
+            userInput,
+            narrativeText: fullText,
+            deltaText: fullText,
+            actorId: mode === 'narrator' ? 'narrator' : (sessionSnapshot?.activeCharacterId ?? 'narrator'),
+            sessionSnapshot,
+            arcId: streamTarget?.arcId,
+            parentId: streamTarget?.parentNodeId
+          });
+        }
+        completed = true;
       }
       bus.emit('stream:end');
     } else {
@@ -259,13 +344,20 @@ async function _stream({ systemPrompt, messages, userInput, mode, actorName, ses
     }
   } finally {
     setStreaming(false, null);
+    _generationInFlight = false;
   }
+  return completed;
 }
 
 // ── Story Load / Restore ──────────────────────────────────────────────────────
 
 async function _loadStory(storyId) {
+  if (getSession().isStreaming || _generationInFlight) {
+    bus.emit('toast', { message: 'Stop the current generation before loading another story.', type: 'error' });
+    return;
+  }
   try {
+    await forceSave();
     await loadStoryIntoStore(storyId);
     setInitialized(true);
     bus.emit('story:loaded');

@@ -6,6 +6,7 @@
 import bus from '../utils/events.js';
 import store from '../state/store.js';
 import { getTree, navigateTo } from '../state/story-tree.js';
+import { getSession } from '../state/session.js';
 
 const NODE_R = 10;
 const NODE_SPACING_X = 80;
@@ -38,21 +39,28 @@ function _render() {
     return;
   }
 
-  // Layout: assign x,y positions via BFS
+  // Layout every arc root as a forest so parallel arcs are visible.
   const positions = {};
-  const queue = [{ id: tree.rootId, col: 0, row: 0 }];
-  const colCounters = {}; // track row usage per col depth
+  const roots = [...new Set([
+    tree.rootId,
+    ...Object.values(tree.arcs ?? {}).map(arc => arc.nodeIds?.[0])
+  ].filter(Boolean))];
+  const queue = roots.map((id, row) => ({ id, col: 0, row: row * 2 }));
+  const visited = new Set();
+  const colCounters = { 0: roots.length * 2 };
 
   while (queue.length > 0) {
     const { id, col, row } = queue.shift();
+    if (visited.has(id)) continue;
+    visited.add(id);
     positions[id] = {
       x: col * NODE_SPACING_X + NODE_R + 20,
       y: row * NODE_SPACING_Y + NODE_R + 20
     };
     const node = tree.nodes[id];
     if (!node) continue;
-    node.childIds?.forEach((childId, i) => {
-      const childRow = (colCounters[col + 1] ?? row) + (i > 0 ? i : 0);
+    node.childIds?.forEach(childId => {
+      const childRow = colCounters[col + 1] ?? row;
       colCounters[col + 1] = childRow + 1;
       queue.push({ id: childId, col: col + 1, row: childRow });
     });
@@ -99,6 +107,7 @@ function _render() {
   // Attach click listeners
   svg.querySelectorAll('.tl-node[data-node]').forEach(el => {
     el.addEventListener('click', () => {
+      if (getSession().isStreaming) return;
       const nodeId = el.dataset.node;
       navigateTo(nodeId);
       document.getElementById('timeline-dialog')?.close();
@@ -109,23 +118,6 @@ function _render() {
 }
 
 function _esc(str) {
-  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-export function timelineDialogHTML() {
-  return `
-<dialog id="timeline-dialog" aria-label="Story Timeline" style="max-width:90vw;width:auto">
-  <div class="modal-header">
-    <span class="modal-title">Story Timeline</span>
-    <button class="modal-close" aria-label="Close">✕</button>
-  </div>
-  <div class="modal-body" style="padding:var(--sp-3)">
-    <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:var(--sp-3)">
-      Click any node to rewind to that point. Orange = current, blue ring = checkpoint.
-    </p>
-    <div id="timeline-container">
-      <svg id="timeline-svg" xmlns="http://www.w3.org/2000/svg"></svg>
-    </div>
-  </div>
-</dialog>`;
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

@@ -45,6 +45,8 @@ function _populateForm() {
 
   const keyInput = dialog.querySelector('#api-key-input');
   if (keyInput) keyInput.value = session.apiKey ?? '';
+  const rememberInput = dialog.querySelector('#remember-api-key');
+  if (rememberInput) rememberInput.checked = Boolean(session.rememberApiKey);
 
   const modelSelect = dialog.querySelector('#model-select');
   if (modelSelect) {
@@ -58,8 +60,9 @@ function _save() {
   const dialog = document.getElementById('settings-dialog');
   const key = dialog.querySelector('#api-key-input')?.value.trim();
   const model = dialog.querySelector('#model-select')?.value;
+  const remember = Boolean(dialog.querySelector('#remember-api-key')?.checked);
 
-  if (key !== undefined) setApiKey(key);
+  if (key !== undefined) setApiKey(key, remember);
   if (model) setModel(model);
 
   dialog.close();
@@ -97,56 +100,4 @@ async function _testConnection() {
       resultEl.style.color = 'var(--danger)';
     }
   }
-}
-
-/** Return the HTML markup for the settings dialog (injected into index.html). */
-export function settingsModalHTML() {
-  return `
-<dialog id="settings-dialog" aria-label="Settings">
-  <div class="modal-header">
-    <span class="modal-title">Settings</span>
-    <button class="modal-close" aria-label="Close">✕</button>
-  </div>
-  <div class="modal-body">
-    <div class="form-group">
-      <label for="api-key-input">Grok API Key</label>
-      <div class="api-key-row">
-        <input type="password" id="api-key-input" placeholder="xai-…" autocomplete="off">
-        <button id="test-connection" class="btn btn-ghost">Test</button>
-      </div>
-      <div id="test-connection-result"></div>
-      <p class="api-warning">
-        Your API key is stored locally in your browser and sent directly to xAI.
-        Never use this on a shared or public computer.
-      </p>
-    </div>
-
-    <div class="form-group">
-      <label for="model-select">Model</label>
-      <select id="model-select"></select>
-    </div>
-
-    <div class="form-group">
-      <label>Story Library</label>
-      <div class="flex gap-2">
-        <button id="open-library-btn" class="btn btn-ghost w-full">Open Story Library</button>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Export / Import</label>
-      <div class="flex gap-2">
-        <button id="export-story-btn" class="btn btn-ghost flex-1">Export Story JSON</button>
-        <label class="btn btn-ghost flex-1" style="cursor:pointer;justify-content:center;">
-          Import Story JSON
-          <input type="file" id="import-story-input" accept=".json,.story.json" style="display:none">
-        </label>
-      </div>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-    <button id="settings-save" class="btn btn-primary">Save</button>
-  </div>
-</dialog>`;
 }

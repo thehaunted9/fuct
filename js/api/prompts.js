@@ -188,18 +188,18 @@ export function buildTransitionPrompt({ fromLocationName, toLocation, world, act
  * @param {string} params.userInput
  * @returns {{ systemPrompt: string, messages: Array }}
  */
-export function buildArcPrompt({ arcName, world, location, character, historyMessages, userInput }) {
+export function buildArcPrompt({ arcName, world, location, character, allChars = [], historyMessages, userInput, mode = 'character' }) {
   const systemPrompt = buildSystemPrompt({
     world,
     location,
     activeChar: character,
-    allChars: character ? [character] : [],
-    mode: 'character'
+    allChars,
+    mode
   }) + `\n\n# Parallel Arc: ${arcName}\nThis is a separate storyline running simultaneously with the main narrative. Maintain its own continuity and tone.`;
 
   return {
     systemPrompt,
-    messages: buildMessages({ historyMessages, userInput, mode: 'character', activeChar: character })
+    messages: buildMessages({ historyMessages, userInput, mode, activeChar: character })
   };
 }
 

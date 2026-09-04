@@ -49,6 +49,7 @@ export async function* streamGrok({ apiKey, model, systemPrompt, messages, maxTo
     throw new Error(errMsg);
   }
 
+  if (!res.body) throw new Error('Grok API returned an empty streaming response.');
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
@@ -63,19 +64,28 @@ export async function* streamGrok({ apiKey, model, systemPrompt, messages, maxTo
 
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!trimmed || !trimmed.startsWith('data: ')) continue;
-
-      const data = trimmed.slice(6); // Remove "data: " prefix
-      if (data === '[DONE]') return;
-
-      try {
-        const parsed = JSON.parse(data);
-        const token = parsed.choices?.[0]?.delta?.content;
-        if (token) yield token;
-      } catch (_) {
-        // Malformed SSE chunk — skip
-      }
+      const event = parseSSELine(trimmed);
+      if (event.done) return;
+      if (event.token) yield event.token;
     }
+  }
+
+  // Some proxies close the stream without a final newline.
+  const finalEvent = parseSSELine(buffer.trim());
+  if (finalEvent.token) yield finalEvent.token;
+}
+
+export function parseSSELine(line) {
+  const match = String(line ?? '').match(/^data:\s?(.*)$/);
+  if (!match) return { done: false, token: '' };
+  const data = match[1];
+  if (data === '[DONE]') return { done: true, token: '' };
+
+  try {
+    const parsed = JSON.parse(data);
+    return { done: false, token: parsed.choices?.[0]?.delta?.content ?? '' };
+  } catch (_) {
+    return { done: false, token: '' };
   }
 }
 

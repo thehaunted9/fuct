@@ -13,7 +13,8 @@
  */
 
 import bus from '../utils/events.js';
-import { getAllCharacters, getActiveCharacter } from '../state/characters.js';
+import { getActiveCharacter, getCharacter } from '../state/characters.js';
+import { getTree } from '../state/story-tree.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,8 @@ export function playSegment(nodeId) {
 
   const rawText = _extractText(textEl);
   const segments = _parseSegments(rawText);
-  _buildQueue(segments, segEl);
+  const actorId = getTree().nodes[nodeId]?.actorId;
+  _buildQueue(segments, segEl, actorId);
   _playQueue();
 }
 
@@ -88,7 +90,9 @@ export function playAll() {
     if (!textEl) return;
     const rawText = _extractText(textEl);
     const segments = _parseSegments(rawText);
-    _buildQueue(segments, segEl);
+    const nodeId = segEl.dataset.node;
+    const actorId = getTree().nodes[nodeId]?.actorId;
+    _buildQueue(segments, segEl, actorId);
   });
   _playQueue();
 }
@@ -215,8 +219,10 @@ export function _parseSegments(text) {
 
 // ─── Queue & Playback ─────────────────────────────────────────────────────────
 
-function _buildQueue(segments, segmentEl) {
-  const char = getActiveCharacter();
+function _buildQueue(segments, segmentEl, actorId = null) {
+  const char = actorId === 'narrator'
+    ? null
+    : (actorId ? getCharacter(actorId) : getActiveCharacter());
   const narratorProfile = getNarratorProfile();
   const charProfile = char?.ttsProfile ?? null;
 

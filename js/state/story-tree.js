@@ -62,7 +62,7 @@ export function initTree(opts = {}) {
 }
 
 /**
- * Append a new node as a child of the current active node.
+ * Append a new node as a child of a story node.
  * @param {object} opts
  * @param {string} opts.userInput       What the user typed
  * @param {string} opts.narrativeText   Full story text at this node
@@ -70,13 +70,21 @@ export function initTree(opts = {}) {
  * @param {string} opts.actorId         'char_xxx' or 'narrator'
  * @param {object} opts.sessionSnapshot
  * @param {string} [opts.arcId]         Defaults to active arc
+ * @param {string} [opts.parentId]      Defaults to the arc's active node
  * @returns {string} new nodeId
  */
 export function appendNode(opts) {
   const tree = store.get('tree');
   const arcId = opts.arcId ?? tree.activeArcId;
   const arc = tree.arcs[arcId];
-  const parentId = arc.activeNodeId;
+  if (!arc) throw new Error(`Story arc ${arcId} does not exist.`);
+
+  const parentId = opts.parentId ?? arc.activeNodeId;
+  const parentNode = tree.nodes[parentId];
+  if (!parentNode || !arc.nodeIds.includes(parentId)) {
+    throw new Error(`Parent node ${parentId} does not belong to story arc ${arcId}.`);
+  }
+
   const nodeId = uid('node');
 
   const node = _makeNode(nodeId, parentId, {
@@ -88,23 +96,21 @@ export function appendNode(opts) {
     sessionSnapshot: opts.sessionSnapshot ?? {}
   });
 
-  const parentNode = tree.nodes[parentId];
-  const updatedParent = parentNode
-    ? { ...parentNode, childIds: [...parentNode.childIds, nodeId] }
-    : null;
+  const updatedParent = { ...parentNode, childIds: [...parentNode.childIds, nodeId] };
+  const activateNewNode = tree.activeArcId === arcId && tree.activeNodeId === parentId;
 
   const updatedArc = {
     ...arc,
     nodeIds: [...arc.nodeIds, nodeId],
-    activeNodeId: nodeId
+    activeNodeId: activateNewNode ? nodeId : arc.activeNodeId
   };
 
   store.set('tree', {
     ...tree,
-    activeNodeId: nodeId,
+    activeNodeId: activateNewNode ? nodeId : tree.activeNodeId,
     nodes: {
       ...tree.nodes,
-      ...(updatedParent ? { [parentId]: updatedParent } : {}),
+      [parentId]: updatedParent,
       [nodeId]: node
     },
     arcs: { ...tree.arcs, [arcId]: updatedArc }
@@ -167,16 +173,19 @@ export function branchFrom(fromNodeId) {
  */
 export function navigateTo(nodeId) {
   const tree = store.get('tree');
-  const arcId = tree.activeArcId;
   if (!tree.nodes[nodeId]) return;
+  const arcId = Object.entries(tree.arcs).find(([, arc]) => arc.nodeIds.includes(nodeId))?.[0]
+    ?? tree.activeArcId;
   store.set('tree', {
     ...tree,
     activeNodeId: nodeId,
+    activeArcId: arcId,
     arcs: {
       ...tree.arcs,
       [arcId]: { ...tree.arcs[arcId], activeNodeId: nodeId }
     }
   });
+  _restoreNodeContext(nodeId);
 }
 
 /**
@@ -229,7 +238,7 @@ export function createArc(name, sessionSnapshot = {}) {
     deltaText: '',
     actorId: 'narrator',
     userInput: '',
-    sessionSnapshot
+    sessionSnapshot: { ...sessionSnapshot, activeArcId: arcId }
   });
 
   store.set('tree', {
@@ -259,6 +268,7 @@ export function switchArc(arcId) {
     activeArcId: arcId,
     activeNodeId: arc.activeNodeId
   });
+  _restoreNodeContext(arc.activeNodeId);
 }
 
 // ─── Read Helpers ─────────────────────────────────────────────────────────────
@@ -267,8 +277,11 @@ export function switchArc(arcId) {
 export function getAncestry(nodeId) {
   const tree = store.get('tree');
   const chain = [];
+  const visited = new Set();
   let current = nodeId;
   while (current) {
+    if (visited.has(current)) throw new Error(`Story tree cycle detected at ${current}`);
+    visited.add(current);
     const node = tree.nodes[current];
     if (!node) break;
     chain.unshift(node);
@@ -286,9 +299,13 @@ export function getAncestry(nodeId) {
  */
 export function getHistoryMessages(nodeId, limit = 15) {
   const ancestry = getAncestry(nodeId);
-  // Exclude root node (no userInput) and the current node itself
-  const relevant = ancestry.slice(1);
-  const windowed = relevant.slice(-limit);
+  // Keep the generated opening even when the rolling history window advances.
+  const opening = ancestry[0]?.parentId === null && ancestry[0]?.deltaText ? ancestry[0] : null;
+  const recentLimit = Math.max(0, limit - (opening ? 1 : 0));
+  const recent = recentLimit > 0
+    ? ancestry.slice(opening ? 1 : 0).slice(-recentLimit)
+    : [];
+  const windowed = opening ? [opening, ...recent] : recent;
 
   const messages = [];
   for (const node of windowed) {
@@ -327,4 +344,23 @@ function _makeNode(id, parentId, fields) {
     userInput: fields.userInput ?? '',
     sessionSnapshot: fields.sessionSnapshot ?? {}
   };
+}
+
+function _restoreNodeContext(nodeId) {
+  const tree = store.get('tree');
+  const snapshot = tree.nodes[nodeId]?.sessionSnapshot ?? {};
+
+  if (snapshot.activeCharacterId) {
+    const characters = store.get('characters');
+    if (characters?.all?.[snapshot.activeCharacterId]) {
+      store.set('characters', { ...characters, activeId: snapshot.activeCharacterId });
+    }
+  }
+
+  if (snapshot.locationId) {
+    const world = store.get('world');
+    if (world?.locations?.[snapshot.locationId]) {
+      store.set('world', { ...world, activeLocationId: snapshot.locationId });
+    }
+  }
 }

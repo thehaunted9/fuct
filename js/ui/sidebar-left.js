@@ -4,10 +4,9 @@
 
 import store from '../state/store.js';
 import bus from '../utils/events.js';
-import { getTree, navigateTo, switchArc, createArc, getAncestry } from '../state/story-tree.js';
-import { getAllLocations, setActiveLocation, getWorld } from '../state/world.js';
+import { getTree, navigateTo, switchArc, createArc } from '../state/story-tree.js';
+import { getAllLocations, getWorld } from '../state/world.js';
 import { getSession } from '../state/session.js';
-import { buildTransitionPrompt } from '../api/prompts.js';
 import { getActiveCharacter } from '../state/characters.js';
 
 export function initSidebarLeft() {
@@ -16,7 +15,6 @@ export function initSidebarLeft() {
   bus.on('sidebar:refresh', () => _render());
   bus.on('story:loaded', () => _render());
   bus.on('arc:create:confirmed', ({ name }) => _createNewArc(name));
-  bus.on('timeline:open', () => _openTimeline());
   _render();
 }
 
@@ -43,12 +41,14 @@ function _renderArcTabs() {
 
   container.querySelectorAll('.arc-tab[data-arc]').forEach(tab => {
     tab.addEventListener('click', () => {
+      if (getSession().isStreaming) return;
       switchArc(tab.dataset.arc);
       bus.emit('sidebar:refresh');
     });
   });
 
   document.getElementById('add-arc-tab')?.addEventListener('click', () => {
+    if (getSession().isStreaming) return;
     bus.emit('arc:create');
   });
 }
@@ -92,6 +92,7 @@ function _renderBranchTree() {
 
   container.querySelectorAll('.branch-node[data-node]').forEach(el => {
     el.addEventListener('click', () => {
+      if (getSession().isStreaming) return;
       navigateTo(el.dataset.node);
     });
   });
@@ -99,8 +100,11 @@ function _renderBranchTree() {
 
 function _getDepth(tree, nodeId) {
   let depth = 0;
+  const visited = new Set();
   let current = nodeId;
   while (current) {
+    if (visited.has(current)) break;
+    visited.add(current);
     const node = tree.nodes[current];
     if (!node || !node.parentId) break;
     depth++;
@@ -136,12 +140,13 @@ function _renderLocations() {
       const locId = el.dataset.loc;
       const currentWorld = getWorld();
       if (locId === currentWorld?.activeLocationId) return;
+      if (getSession().isStreaming) {
+        bus.emit('toast', { message: 'Wait for generation to finish before traveling.', type: 'error' });
+        return;
+      }
 
       const fromLoc = Object.values(getAllLocations()).find(l => l.id === currentWorld?.activeLocationId);
       const toLoc = Object.values(getAllLocations()).find(l => l.id === locId);
-
-      setActiveLocation(locId);
-      _renderLocations();
 
       // Generate transition narration
       bus.emit('story:transition', { fromLocationName: fromLoc?.name ?? 'here', toLocation: toLoc });
@@ -152,6 +157,7 @@ function _renderLocations() {
 // ─── New Arc ──────────────────────────────────────────────────────────────────
 
 function _createNewArc(name) {
+  if (getSession().isStreaming) return;
   const char = getActiveCharacter();
   const world = getWorld();
   createArc(name, {
@@ -159,19 +165,13 @@ function _createNewArc(name) {
     locationId: world?.activeLocationId ?? null,
     activeArcId: null
   });
-  bus.emit('toast', { message: `Arc "${name}" created. Switch to it using the tabs above.`, type: 'success' });
+  bus.emit('toast', { message: `Arc "${name}" created and selected.`, type: 'success' });
   _render();
-}
-
-// ─── Timeline Modal ────────────────────────────────────────────────────────────
-
-function _openTimeline() {
-  const dialog = document.getElementById('timeline-dialog');
-  if (dialog) dialog.showModal();
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function _esc(str) {
-  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

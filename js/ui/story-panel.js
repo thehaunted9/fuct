@@ -7,7 +7,6 @@ import { parseMarkdown } from '../utils/markdown.js';
 import bus from '../utils/events.js';
 import store from '../state/store.js';
 import { getActiveNode, getTree } from '../state/story-tree.js';
-import { stop as ttsStop } from './tts-engine.js';
 
 let _storyContent = null;
 let _streamingSegment = null;
@@ -97,7 +96,7 @@ function _segmentHTML(node) {
     </div>`;
   }
 
-  return `<div class="story-segment" data-node="${node.id}">
+  return `<div class="story-segment" data-node="${_escHtml(node.id)}">
     ${echoHtml}
     <div class="story-text">${parseMarkdown(text)}</div>
     <button class="tts-play-btn" title="Read this segment aloud">🔊</button>
@@ -187,5 +186,6 @@ function _escHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }

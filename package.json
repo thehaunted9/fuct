@@ -1,0 +1,19 @@
+{
+  "name": "fuct-story-builder",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-bundle.mjs",
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "test": "node --test",
+    "verify:bundle": "node scripts/verify-bundle.mjs",
+    "check": "npm run check:syntax && npm test && npm run build && npm run verify:bundle",
+    "start": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "fake-indexeddb": "6.2.5",
+    "jsdom": "30.0.1"
+  }
+}

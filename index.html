@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.x.ai; img-src 'self' https: http: blob:; media-src 'self' https: http: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Story Builder</title>
 
   <!-- Styles -->
@@ -154,9 +155,13 @@
         <input type="password" id="api-key-input" placeholder="xai-…" autocomplete="off">
         <button id="test-connection" class="btn btn-ghost">Test</button>
       </div>
-      <div id="test-connection-result"></div>
-      <p class="api-warning">
-        Your API key is stored locally in your browser and sent directly to xAI.
+       <div id="test-connection-result"></div>
+       <label class="flex items-center gap-2 mt-2">
+         <input type="checkbox" id="remember-api-key" style="width:auto">
+         Remember the API key on this device
+       </label>
+       <p class="api-warning">
+         The key is kept for this browser session unless you choose to remember it, and is sent directly to xAI.
         Never use this on a shared or public computer.
       </p>
     </div>
@@ -185,7 +190,7 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    <button class="btn btn-ghost modal-cancel">Cancel</button>
     <button id="settings-save" class="btn btn-primary">Save</button>
   </div>
 </dialog>
@@ -261,7 +266,7 @@
   </div>
   <div class="modal-footer">
     <button id="char-delete" class="btn btn-danger" style="display:none;margin-right:auto">Delete</button>
-    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    <button class="btn btn-ghost modal-cancel">Cancel</button>
     <button id="char-save" class="btn btn-primary">Save</button>
   </div>
 </dialog>
@@ -308,7 +313,7 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    <button class="btn btn-ghost modal-cancel">Cancel</button>
     <button id="world-save" class="btn btn-primary">Save</button>
   </div>
 </dialog>
@@ -363,7 +368,7 @@
     <div id="story-list"></div>
   </div>
   <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Close</button>
+    <button class="btn btn-ghost modal-cancel">Close</button>
   </div>
 </dialog>
 
@@ -377,29 +382,13 @@
     <!-- Populated by tts-settings.js -->
   </div>
   <div class="modal-footer">
-    <button class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    <button class="btn btn-ghost modal-cancel">Cancel</button>
     <button id="tts-save" class="btn btn-primary">Save Voices</button>
   </div>
 </dialog>
 
 <!-- ── Bootstrap ───────────────────────────────────────────────────────────── -->
 <script type="module" src="js/main.js"></script>
-
-<script>
-  // Welcome screen quick-actions (before modules load)
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('welcome-new-btn')?.addEventListener('click', () => {
-      document.getElementById('welcome-screen')?.classList.add('hidden');
-      document.getElementById('wizard-dialog')?.showModal();
-    });
-    document.getElementById('welcome-settings-btn')?.addEventListener('click', () => {
-      document.getElementById('settings-dialog')?.showModal();
-    });
-    document.getElementById('open-timeline-btn')?.addEventListener('click', () => {
-      document.getElementById('timeline-dialog')?.showModal();
-    });
-  });
-</script>
 
 </body>
 </html>

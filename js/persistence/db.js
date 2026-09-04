@@ -23,6 +23,10 @@ async function openDB() {
 
     req.onsuccess = e => {
       _db = e.target.result;
+      _db.onversionchange = () => {
+        _db.close();
+        _db = null;
+      };
       resolve(_db);
     };
 
@@ -41,6 +45,7 @@ export async function saveStory(bundle) {
     tx.objectStore(STORE).put(bundle);
     tx.oncomplete = resolve;
     tx.onerror = e => reject(e.target.error);
+    tx.onabort = e => reject(e.target.error ?? new Error('Story save was aborted.'));
   });
 }
 
@@ -89,5 +94,6 @@ export async function deleteStory(id) {
     tx.objectStore(STORE).delete(id);
     tx.oncomplete = resolve;
     tx.onerror = e => reject(e.target.error);
+    tx.onabort = e => reject(e.target.error ?? new Error('Story deletion was aborted.'));
   });
 }
