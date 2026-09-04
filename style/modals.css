@@ -1,0 +1,238 @@
+/* ── Native <dialog> base styles ─────────────────────────────────────────────── */
+dialog {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  padding: 0;
+  max-height: 90vh;
+  max-width: 680px;
+  width: 90vw;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  outline: none;
+}
+
+dialog::backdrop {
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(2px);
+}
+
+/* ── Modal layout ────────────────────────────────────────────────────────────── */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+.modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: var(--sp-1);
+  border-radius: var(--border-radius-sm);
+  line-height: 1;
+}
+.modal-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.modal-body {
+  padding: var(--sp-5);
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border-top: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+/* ── Tab bar inside modals ───────────────────────────────────────────────────── */
+.modal-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  padding: 0 var(--sp-5);
+  gap: 0;
+}
+.modal-tab {
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.modal-tab:hover { color: var(--text-primary); }
+.modal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Settings Modal ──────────────────────────────────────────────────────────── */
+#settings-dialog .api-key-row {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+#settings-dialog .api-key-row input { flex: 1; }
+#test-connection-result {
+  font-size: 0.8rem;
+  margin-top: var(--sp-2);
+  min-height: 1.2em;
+}
+.api-warning {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--bg-surface);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border);
+}
+
+/* ── Character Editor ────────────────────────────────────────────────────────── */
+#char-dialog {
+  max-width: 620px;
+}
+
+.tag-input-row {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tag-input-row input { flex: 1; min-width: 120px; }
+.removable-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.removable-tag .remove { cursor: pointer; color: var(--text-muted); font-size: 0.9rem; }
+.removable-tag .remove:hover { color: var(--danger); }
+
+/* ── World Editor ────────────────────────────────────────────────────────────── */
+#world-dialog {
+  max-width: 700px;
+}
+
+.location-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.location-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-2);
+}
+.location-card-name { font-weight: 600; font-size: 0.9rem; }
+
+.faction-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.faction-row:last-child { border-bottom: none; }
+
+/* ── Wizard (New Story) ──────────────────────────────────────────────────────── */
+#wizard-dialog {
+  max-width: 560px;
+}
+
+.wizard-step {
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+.wizard-step.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.wizard-progress {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+.wizard-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+.wizard-step-dot.done { background: var(--success); }
+.wizard-step-dot.active { background: var(--accent); }
+
+.genre-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.genre-btn {
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+.genre-btn:hover { border-color: var(--text-muted); color: var(--text-primary); }
+.genre-btn.selected {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+.genre-btn .genre-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+.genre-btn .genre-name { font-size: 0.85rem; font-weight: 600; }
+.genre-btn .genre-desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+/* ── Story Library Dialog ─────────────────────────────────────────────────────── */
+#library-dialog {
+  max-width: 540px;
+}
+.story-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.story-list-item:hover { background: var(--bg-hover); }
+.story-list-name { font-weight: 500; font-size: 0.9rem; }
+.story-list-date { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.story-list-actions { display: flex; gap: var(--sp-2); }

@@ -1,0 +1,281 @@
+/* ── CSS Variables / Design Tokens ──────────────────────────────────────────── */
+:root {
+  /* Colours (inherited from original dark palette) */
+  --bg-base:       #0e0e12;
+  --bg-panel:      #141418;
+  --bg-surface:    #1c1c22;
+  --bg-raised:     #25252e;
+  --bg-hover:      #2e2e3a;
+  --border:        #2e2e3a;
+  --border-focus:  #f2994a;
+
+  --text-primary:   #e8e8f0;
+  --text-secondary: #9090a8;
+  --text-muted:     #50506a;
+
+  --accent:        #f2994a;
+  --accent-dim:    #a86525;
+  --accent-glow:   rgba(242, 153, 74, 0.15);
+
+  --mode-char:     #7c9eff;
+  --mode-narr:     #f2994a;
+  --mode-world:    #5acc8a;
+
+  --danger:        #e05555;
+  --success:       #5acc8a;
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+
+  /* Typography */
+  --font-ui:    'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-story: Georgia, 'Times New Roman', serif;
+  --font-mono:  'Cascadia Code', 'Fira Code', monospace;
+
+  /* Sizing */
+  --sidebar-left-w:  260px;
+  --sidebar-right-w: 240px;
+  --topnav-h:        52px;
+  --input-panel-h:   auto;
+  --border-radius:   8px;
+  --border-radius-sm: 4px;
+}
+
+/* ── Reset ───────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Scrollbars ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-panel); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Typography helpers ──────────────────────────────────────────────────────── */
+h1 { font-size: 1.4rem; }
+h2 { font-size: 1.1rem; }
+h3 { font-size: 0.95rem; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Form elements ───────────────────────────────────────────────────────────── */
+input, select, textarea, button {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--border-focus);
+}
+
+input[type="text"], input[type="password"], input[type="url"], select {
+  padding: var(--sp-2) var(--sp-3);
+  width: 100%;
+}
+
+textarea {
+  padding: var(--sp-2) var(--sp-3);
+  resize: vertical;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--accent);
+  color: #0e0e12;
+  border-color: var(--accent);
+}
+.btn-primary:hover:not(:disabled) { background: #ffa85a; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-danger:hover:not(:disabled) { background: rgba(224,85,85,0.1); }
+
+.btn-icon {
+  padding: var(--sp-2);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--border-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-icon:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* ── Labels and form groups ──────────────────────────────────────────────────── */
+label { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: var(--sp-1); }
+
+.form-group { margin-bottom: var(--sp-4); }
+.form-group label { margin-bottom: var(--sp-2); }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+/* ── Mode badges ─────────────────────────────────────────────────────────────── */
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  gap: 5px;
+}
+.mode-badge.character { background: rgba(124,158,255,0.15); color: var(--mode-char); }
+.mode-badge.narrator  { background: rgba(242,153,74,0.15);  color: var(--mode-narr); }
+.mode-badge.worldbuilder { background: rgba(90,204,138,0.15); color: var(--mode-world); }
+
+/* ── Tags ────────────────────────────────────────────────────────────────────── */
+.tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: var(--sp-6);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.empty-state .icon { font-size: 2rem; margin-bottom: var(--sp-3); }
+
+/* ── Toasts / notifications ──────────────────────────────────────────────────── */
+#toast-container {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  align-items: center;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--border-radius);
+  font-size: 0.85rem;
+  animation: toast-in 0.25s ease;
+}
+.toast.success { border-color: var(--success); color: var(--success); }
+.toast.error   { border-color: var(--danger); color: var(--danger); }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Details / accordion ─────────────────────────────────────────────────────── */
+details.accordion > summary {
+  cursor: pointer;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-surface);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+details.accordion > summary::after { content: '›'; transition: transform 0.2s; }
+details.accordion[open] > summary::after { transform: rotate(90deg); }
+details.accordion > summary:hover { color: var(--text-primary); }
+details.accordion > .accordion-body { padding: var(--sp-3) 0; }
+
+/* ── Utility ─────────────────────────────────────────────────────────────────── */
+/* Hidden utility — overrides display:flex on welcome screen */
+.hidden { display: none !important; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border-width: 0;
+}
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.gap-2 { gap: var(--sp-2); }
+.gap-3 { gap: var(--sp-3); }
+.flex-1 { flex: 1; }
+.text-muted { color: var(--text-muted); }
+.text-secondary { color: var(--text-secondary); }
+.text-accent { color: var(--accent); }
+.text-sm { font-size: 0.82rem; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-full { width: 100%; }
+.mt-2 { margin-top: var(--sp-2); }
+.mt-3 { margin-top: var(--sp-3); }
+.mt-4 { margin-top: var(--sp-4); }
